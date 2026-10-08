@@ -1,43 +1,66 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/store/auth';
+import { Users, CheckCircle, AlertTriangle, Star } from 'lucide-react';
+import { MOCK_STATS } from '@/lib/mock-data';
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const stats = MOCK_STATS;
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, router]);
-
-  if (!isAuthenticated || !user) return null;
+  const cards = [
+    { label: 'Total Projek', value: stats.totalProyek, icon: Users, color: 'text-blue-600 bg-blue-50' },
+    { label: 'Proyek Selesai', value: stats.proyekSelesai, icon: CheckCircle, color: 'text-emerald-600 bg-emerald-50' },
+    { label: 'PIR Pending (>2 bulan)', value: stats.pirPending, icon: AlertTriangle, color: 'text-red-600 bg-red-50' },
+    { label: 'PIR Selesai', value: stats.pirSelesai, icon: Star, color: 'text-yellow-600 bg-yellow-50' },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-sm p-8">
-        <h1 className="text-2xl font-bold mb-2">Dashboard PIR</h1>
-        <p className="text-gray-600 mb-6">Selamat datang, {user.nama}</p>
+    <div className="space-y-6">
+      {/* StatCards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {cards.map((c) => {
+          const Icon = c.icon;
+          return (
+            <div key={c.label} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${c.color}`}>
+                  <Icon size={22} />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-gray-800">{c.value}</div>
+                  <div className="text-xs text-gray-500">{c.label}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
-        <div className="space-y-2 text-sm mb-6">
-          <div><strong>NIP:</strong> {user.nip}</div>
-          <div><strong>Jabatan:</strong> {user.jabatan}</div>
-          <div><strong>Divisi:</strong> {user.divisi}</div>
-          <div><strong>Unit:</strong> {user.unit}</div>
+      {/* Alert */}
+      <div className="bg-white rounded-xl p-5 shadow-sm border-l-4 border-red-500 flex items-start gap-4">
+        <AlertTriangle className="text-red-500 shrink-0" size={24} />
+        <div className="flex-1">
+          <div className="font-semibold text-gray-800">
+            {stats.pirPending} proyek telah go live lebih dari 2 bulan dan belum memiliki PIR.
+          </div>
+          <div className="text-sm text-gray-500">
+            Batas wajib PIR: 2 bulan setelah tanggal go live
+          </div>
         </div>
-
-        <button
-          onClick={() => {
-            logout();
-            router.push('/login');
-          }}
-          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
-        >
-          Keluar
+        <button className="bg-blue-900 text-white text-sm px-4 py-2 rounded-lg">
+          Lihat Notifikasi
         </button>
+      </div>
+
+      {/* Placeholder untuk tabel & chart */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-white rounded-xl p-6 shadow-sm">
+          <h2 className="font-semibold text-gray-800 mb-4">Daftar Pengembangan TI</h2>
+          <p className="text-sm text-gray-500">Tabel proyek akan diisi di langkah berikutnya.</p>
+        </div>
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <h2 className="font-semibold text-gray-800 mb-4">Statistik Status PIR</h2>
+          <p className="text-sm text-gray-500">Donut chart akan diisi di langkah berikutnya.</p>
+        </div>
       </div>
     </div>
   );
