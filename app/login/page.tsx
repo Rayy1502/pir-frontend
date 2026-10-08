@@ -50,7 +50,7 @@ export default function LoginPage() {
       <div className="hidden md:flex md:w-1/2 bg-linear-to-br from-blue-900 to-emerald-600 text-white p-12 flex-col justify-center">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center">
-            <span className="text-blue-900 font-bold text-xl">P</span>
+            <img src="pusri_logo.png" alt="Logo" width={400} height={400} />
           </div>
           <div>
             <div className="font-bold text-lg">PT PUSRI</div>
@@ -71,7 +71,6 @@ export default function LoginPage() {
           <p className="text-sm text-gray-600 mb-6">
             Gunakan akun internal PT PUSRI Anda.
           </p>
-
           {errorMsg && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
               {errorMsg}
