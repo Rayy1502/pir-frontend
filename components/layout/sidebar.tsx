@@ -78,8 +78,12 @@ export function Sidebar({
         {/* Brand & Toggle Header */}
         <div className="p-4 lg:p-5 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-10 h-10 rounded-lg bg-white shrink-0 flex items-center justify-center shadow-md">
-              <span className="text-blue-900 font-bold text-lg">P</span>
+            <div className="w-10 h-10 rounded-lg bg-white shrink-0 flex items-center justify-center shadow-md p-1 overflow-hidden">
+              <img
+                src="/Logo Emblem Pusri Dark.svg"
+                alt="Logo PT PUSRI"
+                className="w-full h-full object-contain"
+              />
             </div>
             {!isCollapsed && (
               <div className="truncate">

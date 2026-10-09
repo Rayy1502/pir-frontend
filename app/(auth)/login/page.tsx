@@ -50,7 +50,7 @@ export default function LoginPage() {
       <div className="hidden md:flex md:w-1/2 bg-linear-to-br from-emerald-500 to-blue-900 text-white p-12 flex-col justify-center">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-12 h-12 rounded-lg flex items-center justify-center">
-            <img src="Logo Emblem Pusri Dark.svg" alt="Logo" width="50" height="50" />
+            <img src="/Logo Emblem Pusri Dark.svg" alt="Logo" width="50" height="50" />
           </div>
           <div>
             <div className="font-bold text-lg">PT PUSRI</div>

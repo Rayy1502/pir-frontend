@@ -37,7 +37,6 @@ export default function DashboardLayout({
     setIsMobileOpen(false);
   }, [pathname]);
 
-  if (!isAuthenticated) return null;
 
   const meta = PAGE_META[pathname] || { title: 'Dashboard', subtitle: '' };
 
