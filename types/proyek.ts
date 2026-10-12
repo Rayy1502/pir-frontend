@@ -2,29 +2,27 @@ export type StatusPIR = 'selesai' | 'pending' | 'terlambat' | 'belum-jatuh-tempo
 
 export interface Proyek {
   id: string;
-  namaKegiatan: string;
+  nama_kegiatan: string;
   kategori: 'Aplikasi' | 'Infrastruktur' | 'EUC';
-  unitKerja: string;
+  unit_kerja: string;
   vendor: string;
-  tanggalGoLive: string;
-  statusPIR: StatusPIR;
-  kepuasan?: number;
-  kesesuaianTujuan?: number;
-  tindakLanjutSelesai?: number;
-  tindakLanjutTotal?: number;
+  tanggal_go_live: string;
+  status_pir: StatusPIR;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DashboardStats {
-  totalProyek: number;
-  proyekSelesai: number;
-  pirPending: number;
-  pirSelesai: number;
+  total_proyek: number;
+  proyek_selesai: number;
+  pir_pending: number;
+  pir_selesai: number;
 }
 
 export interface StatistikPIR {
   selesai: number;
   pending: number;
   terlambat: number;
-  belumJatuhTempo: number;
+  belum_jatuh_tempo: number;
   total: number;
 }

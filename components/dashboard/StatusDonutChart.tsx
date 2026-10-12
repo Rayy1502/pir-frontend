@@ -11,7 +11,7 @@ const COLORS = {
   selesai: '#10b981',
   pending: '#facc15',
   terlambat: '#ef4444',
-  belumJatuhTempo: '#cbd5e1',
+  belum_jatuh_tempo: '#cbd5e1',
 };
 
 export function StatusDonutChart({ data }: Props) {
@@ -19,21 +19,14 @@ export function StatusDonutChart({ data }: Props) {
     { name: 'Selesai', value: data.selesai, key: 'selesai' },
     { name: 'Pending', value: data.pending, key: 'pending' },
     { name: 'Terlambat', value: data.terlambat, key: 'terlambat' },
-    {
-      name: 'Belum jatuh tempo',
-      value: data.belumJatuhTempo,
-      key: 'belumJatuhTempo',
-    },
+    { name: 'Belum jatuh tempo', value: data.belum_jatuh_tempo, key: 'belum_jatuh_tempo' },
   ];
 
   const legend = [
     { label: `Selesai (${data.selesai})`, color: COLORS.selesai },
     { label: `Pending (${data.pending})`, color: COLORS.pending },
     { label: `Terlambat (${data.terlambat})`, color: COLORS.terlambat },
-    {
-      label: `Belum jatuh tempo (${data.belumJatuhTempo})`,
-      color: COLORS.belumJatuhTempo,
-    },
+    { label: `Belum jatuh tempo (${data.belum_jatuh_tempo})`, color: COLORS.belum_jatuh_tempo },
   ];
 
   return (
@@ -43,38 +36,24 @@ export function StatusDonutChart({ data }: Props) {
       <div className="relative h-56">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
-            <Pie
-              data={chartData}
-              dataKey="value"
-              innerRadius={60}
-              outerRadius={90}
-              paddingAngle={2}
-            >
+            <Pie data={chartData} dataKey="value" innerRadius={60} outerRadius={90} paddingAngle={2}>
               {chartData.map((entry) => (
-                <Cell
-                  key={entry.key}
-                  fill={COLORS[entry.key as keyof typeof COLORS]}
-                />
+                <Cell key={entry.key} fill={COLORS[entry.key as keyof typeof COLORS]} />
               ))}
             </Pie>
           </PieChart>
         </ResponsiveContainer>
 
-        {/* Center label */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <div className="text-2xl font-bold text-gray-800">{data.total}</div>
           <div className="text-xs text-gray-500">proyek</div>
         </div>
       </div>
 
-      {/* Legend */}
       <div className="mt-4 space-y-2">
         {legend.map((l) => (
           <div key={l.label} className="flex items-center gap-2 text-sm">
-            <span
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: l.color }}
-            />
+            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: l.color }} />
             <span className="text-gray-700">{l.label}</span>
           </div>
         ))}
