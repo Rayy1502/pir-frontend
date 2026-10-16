@@ -8,7 +8,10 @@ import { ProjectTable } from '@/components/dashboard/ProjectTable';
 import { StatusDonutChart } from '@/components/dashboard/statusDonutChart';
 import type { Proyek, DashboardStats, StatistikPIR } from '@/types/proyek';
 
+import { useRouter } from 'next/navigation';
+
 export default function DashboardPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [statistik, setStatistik] = useState<StatistikPIR | null>(null);
   const [proyekList, setProyekList] = useState<Proyek[]>([]);
@@ -101,8 +104,8 @@ export default function DashboardPage() {
         <div className="lg:col-span-2">
           <ProjectTable
             data={proyekList}
-            onBuatPIR={(id) => console.log('Buat PIR:', id)}
-            onDetail={(id) => console.log('Detail:', id)}
+            onBuatPIR={(id) => router.push(`/pir-form?proyek_id=${id}`)}
+            onDetail={(id) => router.push(`/proyek/${id}`)}
           />
         </div>
         <div>
