@@ -1,7 +1,10 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Search, Bell, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
+import { useNotificationStore } from '@/store/notifikasi';
 
 interface HeaderProps {
   title: string;
@@ -18,7 +21,14 @@ export function Header({
   onToggleSidebar,
   onOpenMobileMenu,
 }: HeaderProps) {
+  const router = useRouter();
   const { user } = useAuthStore();
+  const { unreadCount, fetchUnreadCount } = useNotificationStore();
+
+  useEffect(() => {
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
+
   const initial = user?.nama?.charAt(0).toUpperCase() || 'U';
 
   return (
@@ -76,13 +86,16 @@ export function Header({
         </div>
 
         <button
+          onClick={() => router.push('/notifikasi')}
           className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition cursor-pointer"
-          title="Notifikasi"
+          title="Pusat Notifikasi"
         >
           <Bell size={20} />
-          <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-            5
-          </span>
+          {unreadCount > 0 && (
+            <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] min-w-4 h-4 px-1 rounded-full flex items-center justify-center font-bold">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
         </button>
 
         <div className="flex items-center gap-2.5 pl-2 border-l border-gray-200">

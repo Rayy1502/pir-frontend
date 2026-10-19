@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
 import { Sidebar } from '@/components/layout/sidebar';
@@ -16,7 +16,7 @@ const PAGE_META: Record<string, { title: string; subtitle: string }> = {
   '/notifikasi': { title: 'Notifikasi', subtitle: 'Peringatan PIR otomatis' },
 };
 
-export default function DashboardLayout({
+function DashboardLayoutContent({
   children,
 }: {
   children: React.ReactNode;
@@ -37,8 +37,14 @@ export default function DashboardLayout({
     setIsMobileOpen(false);
   }, [pathname]);
 
+  const getMeta = (path: string) => {
+    if (path.startsWith('/proyek/')) {
+      return { title: 'Detail Proyek', subtitle: 'Informasi dan tahapan evaluasi PIR' };
+    }
+    return PAGE_META[path] || { title: 'Dashboard', subtitle: '' };
+  };
 
-  const meta = PAGE_META[pathname] || { title: 'Dashboard', subtitle: '' };
+  const meta = getMeta(pathname);
 
   return (
     <div className="flex min-h-screen bg-gray-100/90 text-gray-800">
@@ -64,5 +70,17 @@ export default function DashboardLayout({
         </main>
       </div>
     </div>
+  );
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-100/90" />}>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </Suspense>
   );
 }

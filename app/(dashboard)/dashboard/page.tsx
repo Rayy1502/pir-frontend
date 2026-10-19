@@ -95,7 +95,10 @@ export default function DashboardPage() {
             Batas wajib PIR: 2 bulan setelah tanggal go live
           </div>
         </div>
-        <button className="bg-blue-900 hover:bg-blue-800 text-white text-sm px-4 py-2 rounded-lg">
+        <button
+          onClick={() => router.push('/notifikasi')}
+          className="bg-blue-900 hover:bg-blue-800 text-white text-sm px-4 py-2 rounded-lg transition shrink-0 cursor-pointer"
+        >
           Lihat Notifikasi
         </button>
       </div>

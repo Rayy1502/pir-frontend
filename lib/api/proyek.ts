@@ -1,5 +1,5 @@
 import { api } from './client';
-import type { Proyek } from '@/types/proyek';
+import type { Proyek, ProyekDetail } from '@/types/proyek';
 
 export interface ProyekFilter {
   q?: string;
@@ -16,5 +16,5 @@ export const proyekApi = {
     const qs = params.toString();
     return api.get<Proyek[]>(`/proyek${qs ? `?${qs}` : ''}`);
   },
-  detail: (id: string) => api.get<Proyek>(`/proyek/${id}`),
+  detail: (id: string) => api.get<ProyekDetail>(`/proyek/${id}`),
 };

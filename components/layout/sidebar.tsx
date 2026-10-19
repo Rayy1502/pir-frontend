@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
+import { useNotificationStore } from '@/store/notifikasi';
 import { cn } from '@/lib/utils';
 
 const MENU = [
@@ -24,7 +25,7 @@ const MENU = [
   { label: 'PIR Form', href: '/pir-form', icon: PenTool },
   { label: 'Laporan PIR', href: '/laporan-pir', icon: FileText },
   { label: 'Tindak Lanjut', href: '/tindak-lanjut', icon: RefreshCw },
-  { label: 'Notifikasi', href: '/notifikasi', icon: Bell, badge: 5 },
+  { label: 'Notifikasi', href: '/notifikasi', icon: Bell },
   { label: 'Pengaturan', href: '/pengaturan', icon: Settings },
 ];
 
@@ -44,6 +45,7 @@ export function Sidebar({
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
+  const { unreadCount } = useNotificationStore();
 
   const handleLogout = () => {
     logout();
@@ -141,18 +143,22 @@ export function Sidebar({
                   <span className="flex-1 truncate">{item.label}</span>
                 )}
 
-                {item.badge && (
-                  <span
-                    className={cn(
-                      'bg-rose-500 text-white font-medium text-xs rounded-full flex items-center justify-center',
-                      isCollapsed
-                        ? 'lg:absolute lg:top-1.5 lg:right-1.5 lg:w-2 lg:h-2 lg:p-0'
-                        : 'px-2 py-0.5'
-                    )}
-                  >
-                    {!isCollapsed && item.badge}
-                  </span>
-                )}
+                {(() => {
+                  const badgeValue = item.href === '/notifikasi' ? (unreadCount > 0 ? unreadCount : null) : (item as any).badge;
+                  if (!badgeValue) return null;
+                  return (
+                    <span
+                      className={cn(
+                        'bg-rose-500 text-white font-medium text-xs rounded-full flex items-center justify-center',
+                        isCollapsed
+                          ? 'lg:absolute lg:top-1.5 lg:right-1.5 lg:w-2 lg:h-2 lg:p-0'
+                          : 'px-2 py-0.5'
+                      )}
+                    >
+                      {!isCollapsed && badgeValue}
+                    </span>
+                  );
+                })()}
               </Link>
             );
           })}

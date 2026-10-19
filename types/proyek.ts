@@ -1,5 +1,15 @@
 export type StatusPIR = 'selesai' | 'pending' | 'terlambat' | 'belum-jatuh-tempo';
 
+export type TimelineStatus = 'selesai' | 'pending' | 'terlambat' | 'belum_dimulai';
+
+export interface TimelineStage {
+  key: string;
+  nama: string;
+  deskripsi: string;
+  status: TimelineStatus;
+  tanggal?: string;
+}
+
 export interface Proyek {
   id: string;
   nama_kegiatan: string;
@@ -8,8 +18,20 @@ export interface Proyek {
   vendor: string;
   tanggal_go_live: string;
   status_pir: StatusPIR;
+  kepuasan?: number | null;
+  kesesuaian_tujuan?: number | null;
+  tindak_lanjut_total?: number | null;
+  tindak_lanjut_done?: number | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ProyekDetail extends Proyek {
+  batas_waktu_bulan: number;
+  tanggal_jatuh_tempo: string;
+  timeline: TimelineStage[];
+  pir_form_id?: string | null;
+  laporan_id?: string | null;
 }
 
 export interface DashboardStats {
