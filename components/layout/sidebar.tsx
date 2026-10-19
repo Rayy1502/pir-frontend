@@ -19,7 +19,14 @@ import { useAuthStore } from '@/store/auth';
 import { useNotificationStore } from '@/store/notifikasi';
 import { cn } from '@/lib/utils';
 
-const MENU = [
+interface MenuItem {
+  label: string;
+  href: string;
+  icon: any;
+  badge?: number;
+}
+
+const MENU: MenuItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Daftar Pengembangan TI', href: '/daftar-pengembangan', icon: List },
   { label: 'PIR Form', href: '/pir-form', icon: PenTool },
@@ -144,8 +151,15 @@ export function Sidebar({
                 )}
 
                 {(() => {
-                  const badgeValue = item.href === '/notifikasi' ? (unreadCount > 0 ? unreadCount : null) : (item as any).badge;
-                  if (!badgeValue) return null;
+                  const badgeValue =
+                    item.href === '/notifikasi'
+                      ? unreadCount > 0
+                        ? unreadCount
+                        : undefined
+                      : item.badge;
+
+                  if (badgeValue === undefined) return null;
+
                   return (
                     <span
                       className={cn(

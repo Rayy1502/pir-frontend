@@ -378,7 +378,7 @@ Login → Dashboard
 | **M3**    | Layout Dashboard & Desain Sistem (Sidebar gradien PUSRI, Header responsif) |     -      |  ✅ Done   |    **✅ Done**     |
 | **M3.5**  | Konfigurasi Batas Waktu PIR per Unit Kerja                                 |  ✅ Done   |  ✅ Done   |    **✅ Done**     |
 | **M4**    | Dashboard Terintegrasi (4 StatCard, Donut Chart, Tabel Proyek)             |  ✅ Done   |  ✅ Done   |    **✅ Done**     |
-| **M4.1**  | Navigasi Aksi Dashboard & Detail Proyek (Timeline 5 Tahap + KPI)           |  ✅ Done   |  ✅ Done   |    **✅ Done**     |
+| **M4.1**  | Navigasi Aksi Dashboard & Detail Proyek (Timeline 5 Tahap + KPI)           | ✅ Done | ✅ Done | **✅ Done** |
 | **M5**    | PIR Form Step 1: Pembuatan Form (Metode, Vendor, Tujuan)                   |  ✅ Done   |  ✅ Done   |    **✅ Done**     |
 | **M6**    | PIR Form Step 2: Form Survey (Pertanyaan Dinamis & Skala Kepuasan)         | ⏳ Pending | ⏳ Pending |   **⏳ Pending**   |
 | **M7**    | PIR Form Step 3: Laporan PIR & Ekspor PDF Format PUSRI                     | ⏳ Pending | ⏳ Pending |   **⏳ Pending**   |
