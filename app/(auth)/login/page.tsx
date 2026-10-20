@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
 import { ApiClientError } from '@/lib/api/client';
 
@@ -21,6 +21,16 @@ export default function LoginPage() {
   const login = useAuthStore((s) => s.login);
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('expired') === '1') {
+        setSessionExpired(true);
+      }
+    }
+  }, []);
 
   const {
     register,
@@ -71,6 +81,13 @@ export default function LoginPage() {
           <p className="text-sm text-gray-600 mb-6">
             Gunakan akun internal PT PUSRI Anda.
           </p>
+          {sessionExpired && !errorMsg && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm flex items-center gap-2">
+              <AlertTriangle size={18} className="shrink-0 text-amber-600" />
+              <span>Sesi Anda telah berakhir atau token kadaluarsa. Silakan masuk kembali.</span>
+            </div>
+          )}
+
           {errorMsg && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
               {errorMsg}

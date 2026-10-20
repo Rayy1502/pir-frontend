@@ -34,10 +34,37 @@ export async function apiFetch<T = any>(
     headers,
   });
 
-  const json: ApiResponse<T> = await res.json();
+  let json: ApiResponse<T>;
+  try {
+    json = await res.json();
+  } catch {
+    if (res.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('pir-auth');
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login?expired=1';
+      }
+    }
+    throw new ApiClientError(
+      `Request failed with status ${res.status}`,
+      'SERVER_ERROR',
+      res.status
+    );
+  }
 
   if (!json.success) {
     const err = json as ApiError;
+
+    if (res.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('pir-auth');
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login?expired=1';
+      }
+    }
+
     throw new ApiClientError(err.error.message, err.error.code, res.status);
   }
 

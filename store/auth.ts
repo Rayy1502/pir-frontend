@@ -50,6 +50,8 @@ export const useAuthStore = create<AuthState>()(
           const user = await authApi.me();
           set({ user, isAuthenticated: true });
         } catch {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
           set({ user: null, accessToken: null, isAuthenticated: false });
         }
       },
