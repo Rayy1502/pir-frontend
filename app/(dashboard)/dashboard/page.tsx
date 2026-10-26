@@ -5,7 +5,7 @@ import { Users, CheckCircle, AlertTriangle, Star, Loader2 } from 'lucide-react';
 import { proyekApi } from '@/lib/api/proyek';
 import { dashboardApi } from '@/lib/api/dashboard';
 import { ProjectTable } from '@/components/dashboard/ProjectTable';
-import { StatusDonutChart } from '@/components/dashboard/statusDonutChart';
+import { StatusDonutChart } from '@/components/dashboard/StatusDonutChart';
 import type { Proyek, DashboardStats, StatistikPIR } from '@/types/proyek';
 
 import { useRouter } from 'next/navigation';
@@ -85,29 +85,31 @@ export default function DashboardPage() {
         })}
       </div>
 
-      <div className="bg-white rounded-xl p-5 shadow-sm border-l-4 border-red-500 flex items-start gap-4">
-        <AlertTriangle className="text-red-500 shrink-0" size={24} />
-        <div className="flex-1">
-          <div className="font-semibold text-gray-800">
-            {stats.pir_pending} proyek telah go live lebih dari 2 bulan dan belum memiliki PIR.
+      {stats.pir_pending > 0 && (
+        <div className="bg-white rounded-xl p-5 shadow-sm border-l-4 border-red-500 flex items-start gap-4">
+          <AlertTriangle className="text-red-500 shrink-0" size={24} />
+          <div className="flex-1">
+            <div className="font-semibold text-gray-800">
+              {stats.pir_pending} proyek telah go live lebih dari 2 bulan dan belum memiliki PIR.
+            </div>
+            <div className="text-sm text-gray-500">
+              Batas wajib PIR: 2 bulan setelah tanggal go live
+            </div>
           </div>
-          <div className="text-sm text-gray-500">
-            Batas wajib PIR: 2 bulan setelah tanggal go live
-          </div>
+          <button
+            onClick={() => router.push('/notifikasi')}
+            className="bg-blue-900 hover:bg-blue-800 text-white text-sm px-4 py-2 rounded-lg transition shrink-0 cursor-pointer"
+          >
+            Lihat Notifikasi
+          </button>
         </div>
-        <button
-          onClick={() => router.push('/notifikasi')}
-          className="bg-blue-900 hover:bg-blue-800 text-white text-sm px-4 py-2 rounded-lg transition shrink-0 cursor-pointer"
-        >
-          Lihat Notifikasi
-        </button>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
           <ProjectTable
             data={proyekList}
-            onBuatPIR={(id) => router.push(`/pir-form?proyek_id=${id}`)}
+            onBuatPIR={(id) => router.push(id ? `/pir-form?proyek_id=${id}` : '/pir-form')}
             onDetail={(id) => router.push(`/proyek/${id}`)}
           />
         </div>

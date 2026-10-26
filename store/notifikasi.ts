@@ -36,13 +36,13 @@ export const useNotificationStore = create<NotificationStore>()(
 
       fetchUnreadCount: async () => {
         try {
-          const list = await proyekApi.list();
+          const list = (await proyekApi.list()) || [];
           // Notifikasi aktif: proyek yang berstatus terlambat atau pending
           const activeIds = list
             .filter((p) => p.status_pir === 'terlambat' || p.status_pir === 'pending')
             .map((p) => p.id);
 
-          const { readIds } = get();
+          const readIds = get().readIds || [];
           const unread = activeIds.filter((id) => !readIds.includes(id)).length;
           set({ unreadCount: unread });
         } catch (err) {

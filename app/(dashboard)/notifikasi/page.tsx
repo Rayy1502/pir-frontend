@@ -42,7 +42,7 @@ export default function NotifikasiPage() {
       try {
         setLoading(true);
         const data = await proyekApi.list();
-        setProyekList(data);
+        setProyekList(data || []);
       } catch (err) {
         console.error('Gagal memuat proyek:', err);
       } finally {
@@ -53,10 +53,29 @@ export default function NotifikasiPage() {
     fetchUnreadCount();
   }, [fetchUnreadCount]);
 
+  const formatTanggal = (iso?: string) => {
+    if (!iso) return '-';
+    const bulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return `${d.getDate()} ${bulan[d.getMonth()]} ${d.getFullYear()}`;
+  };
+
   const notifications = useMemo(() => {
     const items: NotificationItem[] = [];
+    const now = new Date();
 
-    proyekList.forEach((p) => {
+    (proyekList || []).forEach((p) => {
+      const tglGoLive = new Date(p.tanggal_go_live);
+      const tglPercobaanSelesai = new Date(tglGoLive);
+      tglPercobaanSelesai.setMonth(tglPercobaanSelesai.getMonth() + 2);
+
+      const tglBatasAkhir = new Date(tglPercobaanSelesai);
+      tglBatasAkhir.setMonth(tglBatasAkhir.getMonth() + 1);
+
+      const hMinus7 = new Date(tglBatasAkhir);
+      hMinus7.setDate(hMinus7.getDate() - 7);
+
       if (p.status_pir === 'terlambat') {
         items.push({
           id: `telat-${p.id}`,
@@ -65,10 +84,11 @@ export default function NotifikasiPage() {
           unitKerja: p.unit_kerja,
           tanggalGoLive: p.tanggal_go_live,
           tipe: 'terlambat',
-          pesan: `Telah melewati batas waktu evaluasi PIR wajib untuk unit kerja ${p.unit_kerja}.`,
-          tenggatWaktu: 'Lewat Jatuh Tempo',
+          pesan: `Melebihi batas waktu evaluasi (>1 bulan setelah masa uji coba 2 bulan sejak ${formatTanggal(tglPercobaanSelesai.toISOString())}). Segera selesaikan form dan unggah laporan ber-TTD.`,
+          tenggatWaktu: 'Lewat Toleransi 1 Bulan',
         });
       } else if (p.status_pir === 'pending') {
+        const isEskalasi = now >= hMinus7;
         items.push({
           id: `segera-${p.id}`,
           proyekId: p.id,
@@ -76,8 +96,10 @@ export default function NotifikasiPage() {
           unitKerja: p.unit_kerja,
           tanggalGoLive: p.tanggal_go_live,
           tipe: 'segera',
-          pesan: `Mendekati batas waktu PIR (H-7). Segera inisiasi pengisian form evaluasi.`,
-          tenggatWaktu: 'Mendekati Batas',
+          pesan: isEskalasi
+            ? `Peringatan Eskalasi: Mendekati 1 bulan pasca masa uji coba (${formatTanggal(tglPercobaanSelesai.toISOString())}), proses evaluasi PIR belum diselesaikan atau di-ACC (Batas: ${formatTanggal(tglBatasAkhir.toISOString())}).`
+            : `Masa uji coba pengguna (2 bulan) telah berakhir pada ${formatTanggal(tglPercobaanSelesai.toISOString())}. Waktu pengambilan data dan pengisian formulir evaluasi PIR telah tiba.`,
+          tenggatWaktu: isEskalasi ? 'Peringatan Eskalasi (H-7)' : 'Masa Uji Coba Selesai',
         });
       }
     });
@@ -89,14 +111,6 @@ export default function NotifikasiPage() {
     if (filter === 'semua') return notifications;
     return notifications.filter((n) => n.tipe === filter);
   }, [notifications, filter]);
-
-  const formatTanggal = (iso?: string) => {
-    if (!iso) return '-';
-    const bulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return iso;
-    return `${d.getDate()} ${bulan[d.getMonth()]} ${d.getFullYear()}`;
-  };
 
   const countTerlambat = notifications.filter((n) => n.tipe === 'terlambat').length;
   const countSegera = notifications.filter((n) => n.tipe === 'segera').length;

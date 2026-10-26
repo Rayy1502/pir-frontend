@@ -1,5 +1,5 @@
 import { api } from './client';
-import type { Proyek, ProyekDetail } from '@/types/proyek';
+import type { Proyek, ProyekDetail, CreateProyekPayload } from '@/types/proyek';
 
 export interface ProyekFilter {
   q?: string;
@@ -8,13 +8,15 @@ export interface ProyekFilter {
 }
 
 export const proyekApi = {
-  list: (filter?: ProyekFilter) => {
+  list: async (filter?: ProyekFilter): Promise<Proyek[]> => {
     const params = new URLSearchParams();
     if (filter?.q) params.append('q', filter.q);
     if (filter?.kategori) params.append('kategori', filter.kategori);
     if (filter?.status) params.append('status', filter.status);
     const qs = params.toString();
-    return api.get<Proyek[]>(`/proyek${qs ? `?${qs}` : ''}`);
+    const data = await api.get<Proyek[]>(`/proyek${qs ? `?${qs}` : ''}`);
+    return data || [];
   },
   detail: (id: string) => api.get<ProyekDetail>(`/proyek/${id}`),
+  create: (payload: CreateProyekPayload) => api.post<Proyek>('/proyek', payload),
 };
