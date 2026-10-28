@@ -49,6 +49,17 @@ export interface UpdatePIRPayload {
   status: 'draft' | 'submitted';
 }
 
+export interface PIRDokumentasi {
+  id: string;
+  pir_form_id: string;
+  kategori: 'observasi' | 'wawancara';
+  nama_file: string;
+  url: string;
+  ukuran_bytes: number;
+  keterangan?: string;
+  uploaded_at: string;
+}
+
 // ==========================================
 // M6: Survey Types
 // ==========================================
@@ -71,6 +82,7 @@ export interface SurveyPertanyaan {
 }
 
 export interface CustomPertanyaanInput {
+  id?: string;
   pertanyaan: string;
   tipe: 'skala' | 'teks' | 'pilihan';
   urutan?: number;
@@ -78,7 +90,56 @@ export interface CustomPertanyaanInput {
   jawaban_angka?: number;
 }
 
+export interface PublicSurveyQuestion {
+  id: string;
+  pertanyaan: string;
+  tipe: 'skala' | 'teks' | 'pilihan';
+  urutan: number;
+}
+
+export interface PublicSurveyResponse {
+  pir_form_id: string;
+  proyek_id: string;
+  nama_kegiatan: string;
+  kategori: string;
+  unit_kerja: string;
+  vendor: string;
+  tanggal_go_live: string;
+  tujuan_awal: string;
+  responden?: string;
+  is_submitted: boolean;
+  total_responden?: number;
+  pertanyaan: PublicSurveyQuestion[];
+}
+
+export interface SurveyJawabanItem {
+  pertanyaan_id: string;
+  jawaban_teks?: string;
+  jawaban_angka?: number;
+}
+
+export interface PublicSubmitSurveyPayload {
+  nama_responden: string;
+  jabatan_responden?: string;
+  unit_kerja_responden?: string;
+  kepuasan: number;
+  kesesuaian_tujuan: number;
+  kendala: string;
+  saran: string;
+  jawaban_lain?: SurveyJawabanItem[];
+}
+
+export interface SaveQuestionsPayload {
+  pertanyaan: {
+    id?: string;
+    pertanyaan: string;
+    tipe: 'skala' | 'teks' | 'pilihan';
+    urutan: number;
+  }[];
+}
+
 export interface SubmitSurveyPayload {
+  responden?: string;
   kepuasan: number;
   kesesuaian_tujuan: number;
   kendala: string;
@@ -86,12 +147,34 @@ export interface SubmitSurveyPayload {
   custom_pertanyaan?: CustomPertanyaanInput[];
 }
 
+export interface RespondenDetail {
+  id: string;
+  pir_form_id: string;
+  nama: string;
+  jabatan?: string;
+  unit_kerja?: string;
+  kepuasan: number;
+  kesesuaian_tujuan: number;
+  kendala?: string;
+  saran?: string;
+  created_at: string;
+}
+
 export interface SurveyResponse {
   pir_form_id: string;
+  proyek_id?: string;
+  nama_kegiatan?: string;
+  unit_kerja?: string;
+  vendor?: string;
+  responden?: string;
+  is_submitted?: boolean;
+  total_responden?: number;
   kepuasan: number;
+  kepuasan_avg?: number;
   kesesuaian_tujuan: number;
   kendala: string;
   saran: string;
+  daftar_responden?: RespondenDetail[];
   pertanyaan: SurveyPertanyaan[];
 }
 

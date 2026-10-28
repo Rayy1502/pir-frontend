@@ -5,7 +5,7 @@ import { Users, CheckCircle, AlertTriangle, Star, Loader2 } from 'lucide-react';
 import { proyekApi } from '@/lib/api/proyek';
 import { dashboardApi } from '@/lib/api/dashboard';
 import { ProjectTable } from '@/components/dashboard/ProjectTable';
-import { StatusDonutChart } from '@/components/dashboard/StatusDonutChart';
+import { StatusDonutChart } from '@/components/dashboard/statusDonutChart';
 import type { Proyek, DashboardStats, StatistikPIR } from '@/types/proyek';
 
 import { useRouter } from 'next/navigation';
@@ -90,10 +90,10 @@ export default function DashboardPage() {
           <AlertTriangle className="text-red-500 shrink-0" size={24} />
           <div className="flex-1">
             <div className="font-semibold text-gray-800">
-              {stats.pir_pending} proyek telah go live lebih dari 2 bulan dan belum memiliki PIR.
+              {stats.pir_pending} proyek telah rilis lebih dari 2 bulan dan belum memiliki PIR.
             </div>
             <div className="text-sm text-gray-500">
-              Batas wajib PIR: 2 bulan setelah tanggal go live
+              Batas wajib PIR: 2 bulan setelah tanggal rilis
             </div>
           </div>
           <button
@@ -109,7 +109,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-2">
           <ProjectTable
             data={proyekList}
-            onBuatPIR={(id) => router.push(id ? `/pir-form?proyek_id=${id}` : '/pir-form')}
+            onBuatPIR={(id) => router.push(id ? `/pir-form?proyek_id=${id}&step=1` : '/pir-form?step=1')}
             onDetail={(id) => router.push(`/proyek/${id}`)}
           />
         </div>

@@ -125,7 +125,7 @@ export default function NotifikasiPage() {
             Pusat Notifikasi PIR
           </h1>
           <p className="text-xs text-gray-500 mt-1">
-            Peringatan otomatis proyek yang terlambat atau mendekati batas waktu evaluasi pasca go-live
+            Peringatan otomatis proyek yang terlambat atau mendekati batas waktu evaluasi pasca rilis
           </p>
         </div>
 
@@ -249,7 +249,7 @@ export default function NotifikasiPage() {
                         <Building size={12} /> {n.unitKerja}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Calendar size={12} /> Go-Live: {formatTanggal(n.tanggalGoLive)}
+                        <Calendar size={12} /> Rilis: {formatTanggal(n.tanggalGoLive)}
                       </span>
                     </div>
                   </div>

@@ -96,7 +96,7 @@ export function ProjectTimeline({ stages }: ProjectTimelineProps) {
         <div>
           <h3 className="text-base font-bold text-gray-800">Timeline Evaluasi PIR (5 Tahap)</h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            Siklus pemantauan proyek sejak go-live hingga penyelesaian tindak lanjut temuan
+            Siklus pemantauan proyek sejak rilis hingga penyelesaian tindak lanjut temuan
           </p>
         </div>
 

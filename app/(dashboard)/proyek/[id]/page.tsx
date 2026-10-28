@@ -345,7 +345,7 @@ function ProyekDetailContent() {
           {proyek.pir_form_id && !isPIRApproved && (
             <button
               onClick={() => setShowApproveModal(true)}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-900 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-xs transition cursor-pointer"
+              className="inline-flex items-center gap-2 bg-linear-to-r from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-900 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-xs transition cursor-pointer"
             >
               <CheckCircle size={16} />
               Setujui & ACC Hasil PIR
@@ -365,7 +365,7 @@ function ProyekDetailContent() {
 
           {isNeedPIR && !proyek.pir_form_id && (
             <button
-              onClick={() => router.push(`/pir-form?proyek_id=${proyek.id}`)}
+              onClick={() => router.push(`/pir-form?proyek_id=${proyek.id}&step=1`)}
               className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-xl shadow-xs transition cursor-pointer"
             >
               <PenTool size={16} />
@@ -399,7 +399,7 @@ function ProyekDetailContent() {
 
       {/* Project Hero Header */}
       <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6 md:p-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-blue-50/80 via-emerald-50/40 to-transparent rounded-bl-full pointer-events-none" />
+        <div className="absolute top-0 right-0 w-80 h-80 bg-linear-to-bl from-blue-50/80 via-emerald-50/40 to-transparent rounded-bl-full pointer-events-none" />
 
         <div className="relative z-10 space-y-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -434,7 +434,7 @@ function ProyekDetailContent() {
 
             <div className="space-y-1">
               <div className="text-xs text-gray-400 flex items-center gap-1.5 font-medium">
-                <Calendar size={14} /> Tanggal Go-Live
+                <Calendar size={14} /> Tanggal Rilis
               </div>
               <div className="font-semibold text-gray-800">
                 {formatTanggal(proyek.tanggal_go_live)}
@@ -481,7 +481,7 @@ function ProyekDetailContent() {
       <ProjectTimeline stages={effectiveStages} />
 
       {/* Section 3: Interactive Approval & Official Signing Workflow Cards */}
-      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-2xl p-6 text-white shadow-md relative overflow-hidden">
+      <div className="bg-linear-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-2xl p-6 text-white shadow-md relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-white/10 pb-4">
@@ -546,14 +546,14 @@ function ProyekDetailContent() {
                 ) : proyek.pir_form_id ? (
                   <button
                     onClick={() => setShowApproveModal(true)}
-                    className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-xs transition cursor-pointer"
+                    className="w-full inline-flex items-center justify-center gap-2 bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-xs transition cursor-pointer"
                   >
                     <CheckCircle size={15} />
                     Setujui & ACC Hasil PIR Sekarang
                   </button>
                 ) : (
                   <button
-                    onClick={() => router.push(`/pir-form?proyek_id=${proyek.id}`)}
+                    onClick={() => router.push(`/pir-form?proyek_id=${proyek.id}&step=1`)}
                     className="w-full inline-flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 text-white font-semibold text-xs py-2.5 px-4 rounded-xl transition cursor-pointer"
                   >
                     <PenTool size={14} />
@@ -626,7 +626,7 @@ function ProyekDetailContent() {
                     </button>
                     <button
                       onClick={() => setShowUploadModal(true)}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-xs transition"
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-xs transition"
                     >
                       <UploadCloud size={14} /> Upload TTD
                     </button>
@@ -634,7 +634,7 @@ function ProyekDetailContent() {
                 ) : isPIRApproved ? (
                   <button
                     onClick={() => router.push(`/pir-form?proyek_id=${proyek.id}&step=3`)}
-                    className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition shadow-xs"
+                    className="w-full inline-flex items-center justify-center gap-2 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition shadow-xs"
                   >
                     <FileText size={14} /> Susun Laporan PIR
                   </button>
@@ -682,7 +682,7 @@ function ProyekDetailContent() {
 
           <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-100 text-xs text-blue-900 leading-relaxed">
             <span className="font-semibold">Catatan Regulasi:</span> Berdasarkan pedoman tata kelola TI PT PUSRI,
-            masa percobaan pengguna berlangsung selama <span className="font-semibold">2 bulan</span> sejak go-live.
+            masa percobaan pengguna berlangsung selama <span className="font-semibold">2 bulan</span> sejak rilis.
             Setelah masa percobaan selesai, tim TI memiliki waktu toleransi <span className="font-semibold">1 bulan</span> untuk
             melaksanakan pengambilan data evaluasi PIR, memperoleh ACC, dan mengunggah laporan resmi bertanda tangan.
           </div>
@@ -734,7 +734,7 @@ function ProyekDetailContent() {
           <div className="space-y-2 pt-4 border-t border-gray-100">
             {isNeedPIR ? (
               <button
-                onClick={() => router.push(`/pir-form?proyek_id=${proyek.id}`)}
+                onClick={() => router.push(`/pir-form?proyek_id=${proyek.id}&step=1`)}
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs py-2.5 px-4 rounded-xl transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
               >
                 <PenTool size={14} />
@@ -811,7 +811,7 @@ function ProyekDetailContent() {
                 type="button"
                 onClick={handleApprovePIR}
                 disabled={approving}
-                className="inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-xs transition"
+                className="inline-flex items-center gap-1.5 bg-linear-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-xs transition"
               >
                 {approving ? (
                   <>
@@ -900,7 +900,7 @@ function ProyekDetailContent() {
                 type="button"
                 onClick={handleUploadSigned}
                 disabled={uploading || !selectedFile}
-                className="inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 disabled:opacity-50 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-xs transition"
+                className="inline-flex items-center gap-1.5 bg-linear-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 disabled:opacity-50 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-xs transition"
               >
                 {uploading ? (
                   <>

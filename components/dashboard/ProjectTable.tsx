@@ -41,7 +41,7 @@ export function ProjectTable({ data, onBuatPIR, onDetail }: Props) {
           </div>
           <button
             onClick={() => onBuatPIR?.()}
-            className="inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-900 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-sm transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 bg-linear-to-r from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-900 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-sm transition cursor-pointer"
           >
             <Plus size={16} />
             <span>+ Buat PIR / Proyek Baru</span>
@@ -83,7 +83,7 @@ export function ProjectTable({ data, onBuatPIR, onDetail }: Props) {
             <tr>
               <th className="text-left px-5 py-3 font-semibold text-gray-600">Nama Kegiatan</th>
               <th className="text-left px-5 py-3 font-semibold text-gray-600">Kategori</th>
-              <th className="text-left px-5 py-3 font-semibold text-gray-600">Tgl Go Live</th>
+              <th className="text-left px-5 py-3 font-semibold text-gray-600">Tgl Rilis</th>
               <th className="text-left px-5 py-3 font-semibold text-gray-600">Unit Kerja</th>
               <th className="text-left px-5 py-3 font-semibold text-gray-600">Status PIR</th>
               <th className="text-left px-5 py-3 font-semibold text-gray-600">Aksi</th>

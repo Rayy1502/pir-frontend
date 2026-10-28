@@ -101,7 +101,7 @@ export default function PengaturanPage() {
             Batas Waktu PIR per Unit Kerja
           </h1>
           <p className="mt-2 text-sm sm:text-base text-blue-100 max-w-2xl leading-relaxed">
-            Atur jangka waktu toleransi evaluasi Post Implementation Review (PIR) setelah tanggal Go-Live proyek untuk masing-masing unit kerja di Divisi Teknologi Informasi PT PUSRI.
+            Atur jangka waktu toleransi evaluasi Post Implementation Review (PIR) setelah tanggal Rilis proyek untuk masing-masing unit kerja di Divisi Teknologi Informasi PT PUSRI.
           </p>
         </div>
         <div className="absolute right-0 top-0 -mt-6 -mr-6 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
@@ -223,7 +223,7 @@ export default function PengaturanPage() {
                         <td className="py-4 px-6">
                           <div className="flex items-center gap-1.5 text-xs text-gray-600">
                             <Clock size={14} className="text-indigo-500" />
-                            <span>H+{currentVal * 30} Hari Go-Live</span>
+                            <span>H+{currentVal * 30} Hari Rilis</span>
                           </div>
                           <span className="text-[11px] text-amber-600 block mt-0.5">
                             Peringatan: H-7 sebelum jatuh tempo
@@ -265,7 +265,7 @@ export default function PengaturanPage() {
         <div className="space-y-1">
           <p className="font-semibold text-amber-950">Pedoman Standar PIR PT PUSRI:</p>
           <p className="text-amber-800 leading-relaxed">
-            Secara default, seluruh proyek wajib menjalani evaluasi PIR paling lambat <strong>2 bulan (60 hari)</strong> setelah Go Live. Khusus untuk unit <strong>Layanan TI</strong> diberikan batas toleransi operasional hingga <strong>3 bulan (90 hari)</strong> untuk pemantauan stabilisasi tiket pengguna.
+            Secara default, seluruh proyek wajib menjalani evaluasi PIR paling lambat <strong>2 bulan (60 hari)</strong> setelah Rilis. Khusus untuk unit <strong>Layanan TI</strong> diberikan batas toleransi operasional hingga <strong>3 bulan (90 hari)</strong> untuk pemantauan stabilisasi tiket pengguna.
           </p>
         </div>
       </div>

@@ -221,7 +221,7 @@ function DaftarPengembanganContent() {
   // Export to CSV
   const handleExportCSV = () => {
     if (filteredList.length === 0) return;
-    const headers = ['No', 'Nama Kegiatan', 'Kategori', 'Unit Kerja', 'Vendor', 'Tanggal Go Live', 'Status PIR'];
+    const headers = ['No', 'Nama Kegiatan', 'Kategori', 'Unit Kerja', 'Vendor', 'Tanggal Rilis', 'Status PIR'];
     const rows = filteredList.map((p, idx) => [
       idx + 1,
       `"${(p.nama_kegiatan || '').replace(/"/g, '""')}"`,
@@ -254,7 +254,7 @@ function DaftarPengembanganContent() {
       return;
     }
     if (!newProject.tanggal_go_live) {
-      setModalError('Tanggal go live wajib diisi');
+      setModalError('Tanggal rilis wajib diisi');
       return;
     }
 
@@ -282,7 +282,7 @@ function DaftarPengembanganContent() {
       await fetchData(true);
 
       if (andStartPIR && created?.id) {
-        router.push(`/pir-form?proyek_id=${created.id}`);
+        router.push(`/pir-form?proyek_id=${created.id}&step=1`);
       } else {
         showToast(`Proyek "${created.nama_kegiatan}" berhasil ditambahkan!`);
       }
@@ -343,7 +343,7 @@ function DaftarPengembanganContent() {
               setModalError(null);
               setIsModalOpen(true);
             }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 hover:from-blue-800 hover:to-indigo-900 text-white text-xs sm:text-sm font-semibold shadow-sm hover:shadow transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-linear-to-r from-blue-700 via-indigo-700 to-blue-800 hover:from-blue-800 hover:to-indigo-900 text-white text-xs sm:text-sm font-semibold shadow-sm hover:shadow transition cursor-pointer"
           >
             <Plus size={18} />
             <span>Tambah Proyek Baru</span>
@@ -545,8 +545,8 @@ function DaftarPengembanganContent() {
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="px-2.5 py-2 text-xs border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
               >
-                <option value="tanggal_desc">Go Live: Terbaru</option>
-                <option value="tanggal_asc">Go Live: Terlama</option>
+                <option value="tanggal_desc">Rilis: Terbaru</option>
+                <option value="tanggal_asc">Rilis: Terlama</option>
                 <option value="nama_asc">Nama: A - Z</option>
                 <option value="nama_desc">Nama: Z - A</option>
               </select>
@@ -599,7 +599,7 @@ function DaftarPengembanganContent() {
               </h3>
               <p className="text-xs sm:text-sm text-gray-500 max-w-sm">
                 {proyekList.length === 0
-                  ? 'Daftarkan proyek TI pertama Anda untuk mulai memantau tanggal go-live serta tahapan PIR otomatis.'
+                  ? 'Daftarkan proyek TI pertama Anda untuk mulai memantau tanggal rilis serta tahapan PIR otomatis.'
                   : 'Coba reset pencarian, ubah pilihan kategori, unit kerja, atau status tab.'}
               </p>
               {proyekList.length === 0 ? (
@@ -633,7 +633,7 @@ function DaftarPengembanganContent() {
                   <th className="py-3 px-4 sm:px-6">Nama Kegiatan & Kategori</th>
                   <th className="py-3 px-4">Unit Kerja</th>
                   <th className="py-3 px-4">Vendor / Pengembang</th>
-                  <th className="py-3 px-4">Tanggal Go Live</th>
+                  <th className="py-3 px-4">Tanggal Rilis</th>
                   <th className="py-3 px-4">Status PIR</th>
                   <th className="py-3 px-4 text-center">Aksi</th>
                 </tr>
@@ -690,7 +690,7 @@ function DaftarPengembanganContent() {
                         </div>
                       </td>
 
-                      {/* Tanggal Go Live */}
+                      {/* Tanggal Rilis */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-1.5 text-gray-800 font-medium text-xs sm:text-sm">
                           <Calendar size={14} className="text-gray-400 shrink-0" />
@@ -708,8 +708,8 @@ function DaftarPengembanganContent() {
                         <div className="flex items-center justify-center gap-1.5">
                           {!isSelesai ? (
                             <button
-                              onClick={() => router.push(`/pir-form?proyek_id=${p.id}`)}
-                              className="inline-flex items-center gap-1 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-2xs transition cursor-pointer"
+                              onClick={() => router.push(`/pir-form?proyek_id=${p.id}&step=1`)}
+                              className="inline-flex items-center gap-1 bg-linear-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-2xs transition cursor-pointer"
                             >
                               <Plus size={14} />
                               <span>Buat PIR</span>
@@ -780,7 +780,7 @@ function DaftarPengembanganContent() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar size={14} className="text-gray-400 shrink-0" />
-                        <span>Go Live: {formatTanggal(p.tanggal_go_live)}</span>
+                        <span>Rilis: {formatTanggal(p.tanggal_go_live)}</span>
                       </div>
                     </div>
 
@@ -808,7 +808,7 @@ function DaftarPengembanganContent() {
 
                     {!isSelesai ? (
                       <button
-                        onClick={() => router.push(`/pir-form?proyek_id=${p.id}`)}
+                        onClick={() => router.push(`/pir-form?proyek_id=${p.id}&step=1`)}
                         className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-2xs transition cursor-pointer"
                       >
                         <Plus size={14} />
@@ -914,7 +914,7 @@ function DaftarPengembanganContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
             {/* Modal Header */}
-            <div className="px-6 py-4.5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
+            <div className="px-6 py-4.5 border-b border-gray-100 flex items-center justify-between bg-linear-to-r from-blue-900 to-indigo-900 text-white">
               <div className="flex items-center gap-2.5">
                 <span className="p-1.5 rounded-lg bg-white/10">
                   <Plus size={18} />
@@ -922,7 +922,7 @@ function DaftarPengembanganContent() {
                 <div>
                   <h3 className="font-bold text-base">Tambah Proyek Pengembangan TI</h3>
                   <p className="text-xs text-blue-100/80">
-                    Daftarkan sistem TI baru yang telah atau akan segera go live
+                    Daftarkan sistem TI baru yang telah atau akan segera rilis
                   </p>
                 </div>
               </div>
@@ -959,7 +959,7 @@ function DaftarPengembanganContent() {
                 />
               </div>
 
-              {/* Kategori & Tanggal Go Live (2 columns) */}
+              {/* Kategori & Tanggal Rilis (2 columns) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-gray-700">
@@ -980,7 +980,7 @@ function DaftarPengembanganContent() {
 
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-gray-700">
-                    Tanggal Go Live <span className="text-rose-500">*</span>
+                    Tanggal Rilis <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="date"

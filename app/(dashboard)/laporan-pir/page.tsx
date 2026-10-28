@@ -173,7 +173,7 @@ function LaporanPIRContent() {
 
       {/* Main Table Card */}
       <Card className="border border-gray-200/90 shadow-sm bg-white rounded-2xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-gray-50 via-white to-gray-50 border-b border-gray-100 p-5 sm:p-6">
+        <CardHeader className="bg-linear-to-r from-gray-50 via-white to-gray-50 border-b border-gray-100 p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
@@ -478,7 +478,7 @@ function LaporanPIRContent() {
                       <td className="px-3 py-2">{selectedLaporan.proyek?.vendor || '-'}</td>
                     </tr>
                     <tr>
-                      <td className="px-3 py-2 font-bold text-gray-500">Tanggal Go Live</td>
+                      <td className="px-3 py-2 font-bold text-gray-500">Tanggal Rilis</td>
                       <td className="px-3 py-2">{selectedLaporan.proyek?.tanggal_go_live}</td>
                     </tr>
                   </tbody>
@@ -644,7 +644,7 @@ function LaporanPIRContent() {
                 type="button"
                 onClick={handleUploadSignedPDF}
                 disabled={uploading || !uploadFile}
-                className="inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 disabled:opacity-50 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-xs transition"
+                className="inline-flex items-center gap-1.5 bg-linear-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 disabled:opacity-50 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-xs transition"
               >
                 {uploading ? (
                   <>
