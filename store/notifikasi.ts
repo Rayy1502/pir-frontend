@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { notifikasiApi } from '@/lib/api/notifikasi';
 import { proyekApi } from '@/lib/api/proyek';
 
 interface NotificationStore {
   unreadCount: number;
   readIds: string[];
-  markAsRead: (id: string) => void;
-  markAllAsRead: (ids: string[]) => void;
+  markAsRead: (id: string) => Promise<void>;
+  markAllAsRead: (ids?: string[]) => Promise<void>;
   fetchUnreadCount: () => Promise<void>;
 }
 
@@ -16,7 +17,7 @@ export const useNotificationStore = create<NotificationStore>()(
       unreadCount: 0,
       readIds: [],
 
-      markAsRead: (id: string) => {
+      markAsRead: async (id: string) => {
         const { readIds, unreadCount } = get();
         if (!readIds.includes(id)) {
           set({
@@ -24,20 +25,41 @@ export const useNotificationStore = create<NotificationStore>()(
             unreadCount: Math.max(0, unreadCount - 1),
           });
         }
+        try {
+          // Jika ID bertipe UUID (dari database notifikasi)
+          if (!id.includes('telat-') && !id.includes('segera-')) {
+            await notifikasiApi.markAsRead(id);
+          }
+        } catch (e) {
+          console.error('Error sync markAsRead ke backend:', e);
+        }
       },
 
-      markAllAsRead: (ids: string[]) => {
+      markAllAsRead: async (ids?: string[]) => {
         const currentRead = get().readIds;
+        const newReadIds = ids ? Array.from(new Set([...currentRead, ...ids])) : currentRead;
         set({
-          readIds: Array.from(new Set([...currentRead, ...ids])),
+          readIds: newReadIds,
           unreadCount: 0,
         });
+        try {
+          await notifikasiApi.markAllAsRead();
+        } catch (e) {
+          console.error('Error sync markAllAsRead ke backend:', e);
+        }
       },
 
       fetchUnreadCount: async () => {
         try {
+          // 1. Ambil jumlah unread dari API Notifikasi (Milestone M9)
+          const apiUnread = await notifikasiApi.getUnreadCount();
+          if (apiUnread > 0) {
+            set({ unreadCount: apiUnread });
+            return;
+          }
+
+          // 2. Fallback: sinkronisasi lokal dengan status proyek
           const list = (await proyekApi.list()) || [];
-          // Notifikasi aktif: proyek yang berstatus terlambat atau pending
           const activeIds = list
             .filter((p) => p.status_pir === 'terlambat' || p.status_pir === 'pending')
             .map((p) => p.id);

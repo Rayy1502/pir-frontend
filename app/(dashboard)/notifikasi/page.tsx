@@ -15,10 +15,13 @@ import {
   CheckCheck,
   X,
   ShieldAlert,
+  RefreshCw,
 } from 'lucide-react';
 import { proyekApi } from '@/lib/api/proyek';
+import { notifikasiApi } from '@/lib/api/notifikasi';
 import { useNotificationStore } from '@/store/notifikasi';
 import type { Proyek } from '@/types/proyek';
+import type { Notifikasi } from '@/types/notifikasi';
 
 interface NotificationItem {
   id: string;
@@ -31,30 +34,38 @@ interface NotificationItem {
   tipe: 'terlambat' | 'segera';
   pesan: string;
   tenggatWaktu: string;
+  isDbRead?: boolean;
 }
 
 export default function NotifikasiPage() {
   const router = useRouter();
   const [proyekList, setProyekList] = useState<Proyek[]>([]);
+  const [dbNotifList, setDbNotifList] = useState<Notifikasi[]>([]);
   const [loading, setLoading] = useState(true);
+  const [triggering, setTriggering] = useState(false);
   const [filter, setFilter] = useState<'semua' | 'terlambat' | 'segera'>('semua');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const { readIds, markAsRead, markAllAsRead, fetchUnreadCount } = useNotificationStore();
 
+  const fetchAllData = async () => {
+    try {
+      setLoading(true);
+      const [proyekData, notifData] = await Promise.all([
+        proyekApi.list().catch(() => []),
+        notifikasiApi.list().catch(() => []),
+      ]);
+      setProyekList(proyekData || []);
+      setDbNotifList(notifData || []);
+    } catch (err) {
+      console.error('Gagal memuat data notifikasi:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProyek = async () => {
-      try {
-        setLoading(true);
-        const data = await proyekApi.list();
-        setProyekList(data || []);
-      } catch (err) {
-        console.error('Gagal memuat proyek:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProyek();
+    fetchAllData();
     fetchUnreadCount();
   }, [fetchUnreadCount]);
 
@@ -78,8 +89,34 @@ export default function NotifikasiPage() {
 
   const notifications = useMemo(() => {
     const items: NotificationItem[] = [];
-    const now = new Date();
 
+    // 1. Jika data notifikasi dari database tersedia (Milestone M9 Scheduler)
+    if (dbNotifList && dbNotifList.length > 0) {
+      dbNotifList.forEach((n) => {
+        items.push({
+          id: n.id,
+          proyekId: n.proyek_id,
+          namaKegiatan: n.nama_kegiatan || 'Proyek TI',
+          unitKerja: n.unit_kerja || '-',
+          tanggalGoLive: n.tanggal_rilis || '',
+          tglPercobaanSelesai: '',
+          tglBatasAkhir: '',
+          tipe: n.tipe === 'terlambat' ? 'terlambat' : 'segera',
+          pesan: n.deskripsi,
+          tenggatWaktu:
+            n.tipe === 'terlambat'
+              ? 'Lewat Batas Waktu'
+              : n.tipe === 'segera'
+              ? 'Peringatan Eskalasi (H-7)'
+              : 'Waktu PIR Dimulai',
+          isDbRead: n.dibaca,
+        });
+      });
+      return items;
+    }
+
+    // 2. Fallback: kalkulasi dinamis berdasarkan status proyek
+    const now = new Date();
     (proyekList || []).forEach((p) => {
       const tglGoLive = new Date(p.tanggal_go_live);
       const tglPercobaanSelesai = new Date(tglGoLive);
@@ -124,7 +161,7 @@ export default function NotifikasiPage() {
     });
 
     return items;
-  }, [proyekList]);
+  }, [dbNotifList, proyekList]);
 
   const filteredItems = useMemo(() => {
     if (filter === 'semua') return notifications;
@@ -134,14 +171,32 @@ export default function NotifikasiPage() {
   const countTerlambat = notifications.filter((n) => n.tipe === 'terlambat').length;
   const countSegera = notifications.filter((n) => n.tipe === 'segera').length;
 
-  const handleMarkAllRead = () => {
-    markAllAsRead(notifications.map((n) => n.proyekId));
+  const handleMarkAllRead = async () => {
+    await markAllAsRead(notifications.map((n) => n.id));
+    setDbNotifList((prev) => prev.map((n) => ({ ...n, dibaca: true })));
     setToastMessage('Semua notifikasi berhasil ditandai sudah dibaca.');
   };
 
-  const handleMarkSingleRead = (proyekId: string, namaKegiatan: string) => {
-    markAsRead(proyekId);
+  const handleMarkSingleRead = async (id: string, namaKegiatan: string) => {
+    await markAsRead(id);
+    setDbNotifList((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, dibaca: true } : n))
+    );
     setToastMessage(`Notifikasi untuk "${namaKegiatan}" ditandai sudah dibaca.`);
+  };
+
+  const handleTriggerScheduler = async () => {
+    try {
+      setTriggering(true);
+      await notifikasiApi.triggerEvaluation();
+      await fetchAllData();
+      await fetchUnreadCount();
+      setToastMessage('Pengecekan evaluasi jadwal notifikasi berhasil diperbarui.');
+    } catch (e: any) {
+      setToastMessage('Gagal memperbarui scheduler: ' + (e.message || 'Error'));
+    } finally {
+      setTriggering(false);
+    }
   };
 
   return (
@@ -195,15 +250,27 @@ export default function NotifikasiPage() {
             </button>
           </div>
 
-          {notifications.length > 0 && (
+          <div className="flex items-center gap-2">
             <button
-              onClick={handleMarkAllRead}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 hover:border-gray-300 text-xs font-semibold text-gray-700 hover:text-blue-900 bg-white shadow-2xs transition cursor-pointer"
+              onClick={handleTriggerScheduler}
+              disabled={triggering}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 hover:border-gray-300 text-xs font-semibold text-gray-700 hover:text-blue-900 bg-white shadow-2xs transition cursor-pointer disabled:opacity-50"
+              title="Jalankan evaluasi scheduler notifikasi sekarang"
             >
-              <CheckCheck size={14} className="text-emerald-600" />
-              Tandai Semua Dibaca
+              <RefreshCw size={13} className={triggering ? 'animate-spin text-blue-600' : 'text-gray-500'} />
+              {triggering ? 'Mengevaluasi...' : 'Picu Scheduler'}
             </button>
-          )}
+
+            {notifications.length > 0 && (
+              <button
+                onClick={handleMarkAllRead}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 hover:border-gray-300 text-xs font-semibold text-gray-700 hover:text-blue-900 bg-white shadow-2xs transition cursor-pointer"
+              >
+                <CheckCheck size={14} className="text-emerald-600" />
+                Tandai Semua Dibaca
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
