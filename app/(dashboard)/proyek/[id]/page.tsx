@@ -212,9 +212,11 @@ function ProyekDetailContent() {
       ? proyek.timeline
       : (() => {
         const tglPercobaanSelesai = new Date(proyek.tanggal_go_live);
-        tglPercobaanSelesai.setMonth(tglPercobaanSelesai.getMonth() + 2);
+        tglPercobaanSelesai.setMonth(tglPercobaanSelesai.getMonth() + effectiveBatasBulan);
         const tglBatasAkhir = new Date(tglPercobaanSelesai);
         tglBatasAkhir.setMonth(tglBatasAkhir.getMonth() + 1);
+        const tglHMinus7 = new Date(tglBatasAkhir);
+        tglHMinus7.setDate(tglHMinus7.getDate() - 7);
 
         const now = new Date();
         const isSelesai = proyek.status_pir === 'selesai';
@@ -222,22 +224,22 @@ function ProyekDetailContent() {
         const t1: TimelineStage = {
           key: 'go_live',
           nama: 'Rilis',
-          deskripsi: `Sistem resmi rilis pada ${formatTanggal(proyek.tanggal_go_live)} (Masa uji coba: 2 bulan)`,
+          deskripsi: `Sistem resmi rilis pada ${formatTanggal(proyek.tanggal_go_live)} (Masa uji coba: ${effectiveBatasBulan} bulan)`,
           status: 'selesai',
           tanggal: proyek.tanggal_go_live,
         };
 
         let notifStatus: TimelineStage['status'] = 'belum_dimulai';
-        let notifDesc = `Masa uji coba pengguna sedang berjalan (selesai: ${formatTanggal(tglPercobaanSelesai.toISOString())})`;
+        let notifDesc = `Masa uji coba pengguna sedang berjalan (notifikasi PIR akan dikirim pada: ${formatTanggal(tglPercobaanSelesai.toISOString())})`;
         if (isSelesai) {
           notifStatus = 'selesai';
-          notifDesc = 'Notifikasi diproses & PIR selesai disahkan';
-        } else if (now > tglBatasAkhir) {
-          notifStatus = 'terlambat';
-          notifDesc = `Melebihi batas waktu evaluasi (>1 bulan pasca masa uji coba)`;
-        } else if (now > tglPercobaanSelesai) {
-          notifStatus = 'pending';
-          notifDesc = `Masa uji coba 2 bulan telah selesai. Waktu pelaksanaan PIR tiba.`;
+          notifDesc = 'Notifikasi diproses & siklus PIR telah selesai disahkan';
+        } else if (now < tglPercobaanSelesai) {
+          notifStatus = 'belum_dimulai';
+          notifDesc = `Masa uji coba pengguna sedang berjalan (selesai: ${formatTanggal(tglPercobaanSelesai.toISOString())})`;
+        } else {
+          notifStatus = 'selesai';
+          notifDesc = `Notifikasi evaluasi PIR telah dikirim pada ${formatTanggal(tglPercobaanSelesai.toISOString())} pasca masa uji coba`;
         }
 
         const t2: TimelineStage = {
@@ -248,17 +250,36 @@ function ProyekDetailContent() {
           tanggal: tglPercobaanSelesai.toISOString().split('T')[0],
         };
 
+        // Tahap 3: PIR Review
+        // Aturan:
+        // - Jika sudah di-ACC / selesai -> status 'selesai'
+        // - Jika notifikasi belum dikirim (now < tglPercobaanSelesai) -> status 'belum_dimulai'
+        // - Jika notifikasi sudah muncul (now >= tglPercobaanSelesai) -> status 'pending'
+        // - Sesudah sebulan notifikasi dikirim, berubah jadi 'terlambat' saat H-7 dari sebulan itu (now >= tglHMinus7)
         let pirStatus: TimelineStage['status'] = 'belum_dimulai';
-        let pirDesc = 'Menunggu masa uji coba 2 bulan';
+        let pirDesc = `Menunggu notifikasi PIR (masa uji coba ${effectiveBatasBulan} bulan selesai)`;
         if (isPIRApproved) {
           pirStatus = 'selesai';
           pirDesc = `Data evaluasi PIR telah di-ACC & disetujui oleh ${proyek.approved_by || 'VP Teknologi Informasi'}`;
-        } else if (proyek.pir_form_id) {
+        } else if (now < tglPercobaanSelesai) {
+          pirStatus = 'belum_dimulai';
+          pirDesc = `Notifikasi belum dikirim, menunggu masa uji coba selesai (${formatTanggal(tglPercobaanSelesai.toISOString())})`;
+        } else if (now >= tglHMinus7) {
+          pirStatus = 'terlambat';
+          if (now > tglBatasAkhir) {
+            pirDesc = proyek.pir_form_id
+              ? 'Evaluasi PIR belum di-ACC dan telah melewati batas toleransi 1 bulan pasca notifikasi'
+              : 'Pengambilan data & evaluasi PIR belum selesai, melewati batas toleransi 1 bulan pasca notifikasi';
+          } else {
+            pirDesc = proyek.pir_form_id
+              ? 'Formulir PIR belum di-ACC dan telah memasuki batas waktu kritis (H-7 sebelum toleransi 1 bulan berakhir)'
+              : 'Evaluasi PIR belum diselesaikan dan telah memasuki periode batas waktu kritis (H-7)';
+          }
+        } else {
           pirStatus = 'pending';
-          pirDesc = 'Form & survei telah diisi, menunggu ACC penilai';
-        } else if (now > tglPercobaanSelesai) {
-          pirStatus = 'pending';
-          pirDesc = 'Waktu evaluasi tiba, formulir PIR belum dibuat';
+          pirDesc = proyek.pir_form_id
+            ? 'Form & survei telah diisi, menunggu persetujuan / ACC penilai'
+            : 'Notifikasi evaluasi telah terbit, pengisian formulir & evaluasi PIR sedang berjalan';
         }
 
         const t3: TimelineStage = {
@@ -266,6 +287,7 @@ function ProyekDetailContent() {
           nama: 'PIR Review',
           deskripsi: pirDesc,
           status: pirStatus,
+          tanggal: proyek.pir_form_id ? proyek.tanggal_jatuh_tempo || undefined : undefined,
         };
 
         let lapStatus: TimelineStage['status'] = 'belum_dimulai';

@@ -38,6 +38,7 @@ import {
   Upload,
   Image,
   X,
+  Pencil,
 } from 'lucide-react';
 import { proyekApi } from '@/lib/api/proyek';
 import { pirApi } from '@/lib/api/pir';
@@ -56,6 +57,7 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { formatTanggalIndo, formatDateOnly, summarizeFeedback, cleanAnonymizedText } from '@/lib/utils';
 
 interface StepItem {
   num: number;
@@ -68,6 +70,47 @@ const STEPS: StepItem[] = [
   { num: 2, title: 'Evaluasi & Review', subtitle: 'Observasi / Wawancara / Survei' },
   { num: 3, title: 'Laporan PIR', subtitle: 'Format Resmi PUSRI' },
   { num: 4, title: 'Tindak Lanjut', subtitle: 'Tracking Temuan & Bukti' },
+];
+
+export const PIR_STANDARD_QUESTIONS_SCOPE = [
+  // A. Kualitas Sistem & Antarmuka
+  { no: 1, judul: 'Saya bisa menemukan menu atau fitur yang saya cari dengan cepat, tanpa coba-coba atau bertanya ke rekan', tipe: 'skala' as const, kategori: 'Kualitas Sistem & Antarmuka' },
+  { no: 2, judul: 'Proses di aplikasi (misal menyimpan, mencari) berjalan cepat sehingga tidak mengganggu pekerjaan saya', tipe: 'skala' as const, kategori: 'Kualitas Sistem & Antarmuka' },
+  { no: 3, judul: 'Aplikasi ini jarang error, atau tidak bisa diakses pada jam kerja', tipe: 'skala' as const, kategori: 'Keandalan Sistem & Ketersediaan' },
+  { no: 4, judul: 'Pada jam kerja, saya dapat tersambung ke aplikasi lewat jaringan kantor setiap kali saya membutuhkannya', tipe: 'skala' as const, kategori: 'Akses & Jaringan Kantor' },
+  { no: 5, judul: 'Koneksi jaringan jarang terputus saat saya sedang mengisi, menyimpan, atau mengirim data di aplikasi', tipe: 'skala' as const, kategori: 'Akses & Jaringan Kantor' },
+
+  // B. Kualitas Data & Informasi
+  { no: 6, judul: 'Data yang saya gunakan dalam pekerjaan (angka, status, atau laporan) akurat dan sesuai dengan kondisi sebenarnya', tipe: 'skala' as const, kategori: 'Kualitas Data & Informasi' },
+  { no: 7, judul: 'Data yang saya butuhkan selalu terbaru, tanpa keterlambatan pembaruan yang mengganggu pekerjaan', tipe: 'skala' as const, kategori: 'Kualitas Data & Informasi' },
+  { no: 8, judul: 'Informasinya cukup lengkap sehingga saya tidak perlu mencari ke sumber lain untuk menyelesaikan tugas', tipe: 'skala' as const, kategori: 'Kualitas Data & Informasi' },
+  { no: 9, judul: 'Informasi di layar bisa langsung saya pahami tanpa perlu penjelasan tambahan', tipe: 'skala' as const, kategori: 'Kualitas Data & Informasi' },
+
+  // C. Layanan & Dukungan Tim TI
+  { no: 10, judul: 'Saat saya melaporkan kendala, tim IT/helpdesk menanggapi dalam waktu yang wajar', tipe: 'skala' as const, kategori: 'Layanan & Dukungan TI' },
+  { no: 11, judul: 'Solusi dari tim IT/helpdesk benar-benar menyelesaikan masalah saya, bukan solusi sementara atau masalah yang berulang', tipe: 'skala' as const, kategori: 'Layanan & Dukungan TI' },
+  { no: 12, judul: 'Tim IT/helpdesk memahami kebutuhan kerja saya ketika saya meminta bantuan, pelatihan atau perubahan fitur', tipe: 'skala' as const, kategori: 'Layanan & Dukungan TI' },
+
+  // D. Adopsi & Kepuasan Pengguna
+  { no: 13, judul: 'Pekerjaan inti saya, saya kerjakan melalui aplikasi ini secara rutin', tipe: 'skala' as const, kategori: 'Adopsi & Penggunaan Sistem' },
+  { no: 14, judul: 'Saya memakai aplikasi ini karena memang membantu pekerjaan, bukan sekadar karena diwajibkan', tipe: 'skala' as const, kategori: 'Adopsi & Penggunaan Sistem' },
+  { no: 15, judul: 'Secara keseluruhan, saya puas dengan pengalaman memakai aplikasi ini dalam pekerjaan sehari-hari', tipe: 'skala' as const, kategori: 'Kepuasan Pengguna Keseluruhan' },
+  { no: 16, judul: 'Saya puas dengan fitur utama yang tersedia', tipe: 'skala' as const, kategori: 'Kepuasan Pengguna Keseluruhan' },
+  { no: 17, judul: 'Pengalaman saya memakai aplikasi ini sesuai dengan harapan saya sebelum mulai menggunakannya', tipe: 'skala' as const, kategori: 'Kesesuaian Ekspektasi Awal' },
+
+  // E. Dampak Kinerja & Efisiensi Pekerjaan
+  { no: 18, judul: 'Aplikasi ini mempersingkat waktu penyelesaian tugas saya dibandingkan cara sebelumnya', tipe: 'skala' as const, kategori: 'Dampak Kinerja & Efisiensi' },
+  { no: 19, judul: 'Aplikasi ini mengurangi pekerjaan berulang atau kesalahan input yang sebelumnya sering terjadi', tipe: 'skala' as const, kategori: 'Dampak Kinerja & Efisiensi' },
+  { no: 20, judul: 'Informasi dari aplikasi ini membantu saya mengambil keputusan atau tindakan dibandingkan sebelum ada aplikasi', tipe: 'skala' as const, kategori: 'Dampak Kinerja & Efisiensi' },
+
+  // F. Evaluasi Dampak Manfaat (Pilihan %)
+  { no: 21, judul: 'Manfaat Business (Peningkatan pendapatan, efisiensi biaya operasional)', tipe: 'pilihan' as const, kategori: 'Evaluasi Manfaat Implementasi' },
+  { no: 22, judul: 'Manfaat Process (Efisiensi proses bisnis, mempercepat penyelesaian pekerjaan)', tipe: 'pilihan' as const, kategori: 'Evaluasi Manfaat Implementasi' },
+  { no: 23, judul: 'Manfaat Regulatory (Pemenuhan aturan dan kepatuhan menjadi lebih baik)', tipe: 'pilihan' as const, kategori: 'Evaluasi Manfaat Implementasi' },
+
+  // G. Masukan Kualitatif & Rekomendasi
+  { no: 24, judul: 'Apa yang berubah dalam cara Anda bekerja dibandingkan sebelumnya (ditambah, dihilangkan, atau berubah caranya)? Sebutkan perubahan yang paling Anda rasakan...', tipe: 'teks' as const, kategori: 'Evaluasi Kualitatif & Perubahan' },
+  { no: 25, judul: 'Tuliskan kebutuhan pengembangan, perbaikan, atau peningkatan modul. Jika tidak ada, tuliskan "Tidak ada"', tipe: 'teks' as const, kategori: 'Rekomendasi Peningkatan Modul' },
 ];
 
 function PIRFormWizard() {
@@ -105,6 +148,14 @@ function PIRFormWizard() {
   const [kesimpulanWawancara, setKesimpulanWawancara] = useState('');
   const [responden, setResponden] = useState('');
 
+  // Step 1: Pejabat Pengesahan Dokumen PIR (Berita Acara)
+  const [disiapkanOleh, setDisiapkanOleh] = useState('Budi Pratama');
+  const [disiapkanJabatan, setDisiapkanJabatan] = useState('TKNO Perencanaan & Tata Kelola TI');
+  const [direviewOleh, setDireviewOleh] = useState('Rahmat Hidayat');
+  const [direviewJabatan, setDireviewJabatan] = useState('Senior Engineer Perencanaan & Tata Kelola TI');
+  const [disetujuiOleh, setDisetujuiOleh] = useState('Ahmad Fauzi');
+  const [disetujuiJabatan, setDisetujuiJabatan] = useState('VP Departemen Teknologi Informasi PSP');
+
   // Step 2: Form Survey, Pertanyaan, & Tautan Review
   const [kepuasanSurvey, setKepuasanSurvey] = useState<number>(4);
   const [kesesuaianSurvey, setKesesuaianSurvey] = useState<number>(4);
@@ -119,11 +170,14 @@ function PIRFormWizard() {
   const [linkCopied, setLinkCopied] = useState<boolean>(false);
   const [refreshingSurvey, setRefreshingSurvey] = useState<boolean>(false);
   const [showManualInput, setShowManualInput] = useState<boolean>(false);
+  const [showAllStandardQuestions, setShowAllStandardQuestions] = useState<boolean>(false);
 
   // Step 2: Dokumentasi (Observasi & Wawancara)
   const [dokumentasiList, setDokumentasiList] = useState<PIRDokumentasi[]>([]);
   const [uploadingDokumentasi, setUploadingDokumentasi] = useState<boolean>(false);
   const [dokKeterangan, setDokKeterangan] = useState<string>('');
+  const [editingDokId, setEditingDokId] = useState<string | null>(null);
+  const [editingDokText, setEditingDokText] = useState<string>('');
 
   // Step 3: Laporan PIR
   const [existingLaporanId, setExistingLaporanId] = useState<string | null>(null);
@@ -133,10 +187,7 @@ function PIRFormWizard() {
   const [tanggalLaporan, setTanggalLaporan] = useState(
     new Date().toISOString().split('T')[0]
   );
-  const [temuanList, setTemuanList] = useState<string[]>([
-    'Tingkat adopsi user telah mencapai target operasional awal.',
-    'Dibutuhkan pelatihan lanjutan untuk modul pelaporan lanjutan.',
-  ]);
+  const [temuanList, setTemuanList] = useState<string[]>([]);
   const [newTemuanInput, setNewTemuanInput] = useState('');
 
   // Step 4: Tindak Lanjut
@@ -168,6 +219,12 @@ function PIRFormWizard() {
     setDaftarPertanyaan('');
     setKesimpulanWawancara('');
     setResponden('');
+    setDisiapkanOleh('Budi Pratama');
+    setDisiapkanJabatan('TKNO Perencanaan & Tata Kelola TI');
+    setDireviewOleh('Rahmat Hidayat');
+    setDireviewJabatan('Senior Engineer Perencanaan & Tata Kelola TI');
+    setDisetujuiOleh('Ahmad Fauzi');
+    setDisetujuiJabatan('VP Departemen Teknologi Informasi PSP');
     setIsSurveySubmitted(false);
     setSurveyRespondenName('');
     setDaftarResponden([]);
@@ -186,10 +243,7 @@ function PIRFormWizard() {
     setRingkasanLaporan('');
     setRekomendasiLaporan('');
     setTanggalLaporan(new Date().toISOString().split('T')[0]);
-    setTemuanList([
-      'Tingkat adopsi user telah mencapai target operasional awal.',
-      'Dibutuhkan pelatihan lanjutan untuk modul pelaporan lanjutan.',
-    ]);
+    setTemuanList([]);
     setNewTemuanInput('');
     setActionItems([]);
     setMessage(null);
@@ -206,6 +260,16 @@ function PIRFormWizard() {
       setCurrentStep(1);
     }
   }, [queryStep, queryProyekId]);
+
+  // Auto-dismiss floating toast message after 5 seconds
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => {
+        setMessage(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
 
   // 1. Fetch Daftar Proyek
   useEffect(() => {
@@ -262,6 +326,12 @@ function PIRFormWizard() {
           setDaftarPertanyaan(pir.daftar_pertanyaan || '');
           setKesimpulanWawancara(pir.kesimpulan_wawancara || '');
           setResponden(pir.responden || '');
+          setDisiapkanOleh(pir.disiapkan_oleh || 'Budi Pratama');
+          setDisiapkanJabatan(pir.disiapkan_jabatan || 'TKNO Perencanaan & Tata Kelola TI');
+          setDireviewOleh(pir.direview_oleh || 'Rahmat Hidayat');
+          setDireviewJabatan(pir.direview_jabatan || 'Senior Engineer Perencanaan & Tata Kelola TI');
+          setDisetujuiOleh(pir.disetujui_oleh || 'Ahmad Fauzi');
+          setDisetujuiJabatan(pir.disetujui_jabatan || 'VP Departemen Teknologi Informasi PSP');
 
           // Ambil Survey jika sudah ada
           try {
@@ -272,8 +342,20 @@ function PIRFormWizard() {
               if (surveyRes.kepuasan) setKepuasanSurvey(surveyRes.kepuasan);
               if (surveyRes.kesesuaian_tujuan)
                 setKesesuaianSurvey(surveyRes.kesesuaian_tujuan);
-              if (surveyRes.kendala) setKendalaSurvey(surveyRes.kendala);
-              if (surveyRes.saran) setSaranSurvey(surveyRes.saran);
+
+              // Cari jawaban butir ke-3 (Kendala) dan ke-4 (Saran)
+              const q3 = surveyRes.pertanyaan?.find((q) => q.urutan === 3);
+              const q4 = surveyRes.pertanyaan?.find((q) => q.urutan === 4);
+
+              const isDirectEval = pir.metode === 'observasi' || pir.metode === 'wawancara';
+              if (isDirectEval) {
+                setKendalaSurvey(q3?.jawaban?.jawaban_teks || surveyRes.kendala || '');
+                setSaranSurvey(q4?.jawaban?.jawaban_teks || surveyRes.saran || '');
+              } else {
+                setKendalaSurvey(summarizeFeedback(surveyRes.kendala || q3?.jawaban?.jawaban_teks || ''));
+                setSaranSurvey(summarizeFeedback(surveyRes.saran || q4?.jawaban?.jawaban_teks || ''));
+              }
+
               if (surveyRes.daftar_responden) {
                 setDaftarResponden(surveyRes.daftar_responden);
                 setTotalResponden(surveyRes.total_responden || surveyRes.daftar_responden.length);
@@ -282,14 +364,19 @@ function PIRFormWizard() {
                 setKepuasanAvg(surveyRes.kepuasan_avg);
               }
 
-              if (surveyRes.pertanyaan && surveyRes.pertanyaan.length > 4) {
-                const customOnly = surveyRes.pertanyaan.slice(4).map((q) => ({
-                  id: q.id,
-                  pertanyaan: q.pertanyaan,
-                  tipe: q.tipe,
-                  jawaban_teks: q.jawaban?.jawaban_teks,
-                  jawaban_angka: q.jawaban?.jawaban_angka,
-                }));
+              if (surveyRes.pertanyaan && surveyRes.pertanyaan.length > 0) {
+                const threshold = surveyRes.pertanyaan.length >= 20 ? 25 : 4;
+                const customOnly = surveyRes.pertanyaan
+                  .filter((q) => q.urutan > threshold)
+                  .map((q) => ({
+                    id: q.id,
+                    pertanyaan: q.pertanyaan,
+                    tipe: q.tipe,
+                    urutan: q.urutan,
+                    kategori: q.kategori,
+                    jawaban_teks: q.jawaban?.jawaban_teks,
+                    jawaban_angka: q.jawaban?.jawaban_angka,
+                  }));
                 setCustomQuestions(customOnly);
               }
             }
@@ -300,8 +387,22 @@ function PIRFormWizard() {
           // Ambil Dokumentasi PIR (Observasi & Wawancara) jika sudah ada
           try {
             const dokRes = await pirApi.getDokumentasi(pir.id);
-            if (dokRes) {
+            if (dokRes && dokRes.length > 0) {
               setDokumentasiList(dokRes);
+              // Pulihkan keterangan berkas dari dokumentasi yang ada jika dokKeterangan belum diisi
+              const matching = dokRes.filter((d) => d.kategori === pir.metode);
+              const withDesc =
+                matching.find((d) => d.keterangan && d.keterangan.trim() !== '') ||
+                dokRes.find((d) => d.keterangan && d.keterangan.trim() !== '');
+              if (withDesc?.keterangan) {
+                setDokKeterangan(withDesc.keterangan);
+              } else if (typeof window !== 'undefined') {
+                const cached = localStorage.getItem(`pir_draft_dok_keterangan_${pir.id}`);
+                if (cached) setDokKeterangan(cached);
+              }
+            } else if (typeof window !== 'undefined') {
+              const cached = localStorage.getItem(`pir_draft_dok_keterangan_${pir.id}`);
+              if (cached) setDokKeterangan(cached);
             }
           } catch (e) {
             // dokumentasi belum dibuat
@@ -315,7 +416,7 @@ function PIRFormWizard() {
               setNomorPIRPreview(lapRes.nomor_pir);
               setRingkasanLaporan(lapRes.ringkasan);
               setRekomendasiLaporan(lapRes.rekomendasi);
-              setTanggalLaporan(lapRes.tanggal_laporan);
+              setTanggalLaporan(formatDateOnly(lapRes.tanggal_laporan) || new Date().toISOString().split('T')[0]);
               if (lapRes.temuan && lapRes.temuan.length > 0) {
                 setTemuanList(lapRes.temuan.map((t) => t.temuan));
               }
@@ -417,6 +518,12 @@ function PIRFormWizard() {
           daftar_pertanyaan: daftarPertanyaan,
           kesimpulan_wawancara: kesimpulanWawancara,
           responden,
+          disiapkan_oleh: disiapkanOleh,
+          disiapkan_jabatan: disiapkanJabatan,
+          direview_oleh: direviewOleh,
+          direview_jabatan: direviewJabatan,
+          disetujui_oleh: disetujuiOleh,
+          disetujui_jabatan: disetujuiJabatan,
           status,
         });
       } else {
@@ -431,6 +538,12 @@ function PIRFormWizard() {
           daftar_pertanyaan: daftarPertanyaan,
           kesimpulan_wawancara: kesimpulanWawancara,
           responden,
+          disiapkan_oleh: disiapkanOleh,
+          disiapkan_jabatan: disiapkanJabatan,
+          direview_oleh: direviewOleh,
+          direview_jabatan: direviewJabatan,
+          disetujui_oleh: disetujuiOleh,
+          disetujui_jabatan: disetujuiJabatan,
           status,
         });
         pirId = res.id;
@@ -480,8 +593,8 @@ function PIRFormWizard() {
         if (surveyRes.responden) setSurveyRespondenName(surveyRes.responden);
         if (surveyRes.kepuasan) setKepuasanSurvey(surveyRes.kepuasan);
         if (surveyRes.kesesuaian_tujuan) setKesesuaianSurvey(surveyRes.kesesuaian_tujuan);
-        if (surveyRes.kendala) setKendalaSurvey(surveyRes.kendala);
-        if (surveyRes.saran) setSaranSurvey(surveyRes.saran);
+        if (surveyRes.kendala) setKendalaSurvey(summarizeFeedback(surveyRes.kendala));
+        if (surveyRes.saran) setSaranSurvey(summarizeFeedback(surveyRes.saran));
         if (surveyRes.daftar_responden) {
           setDaftarResponden(surveyRes.daftar_responden);
           setTotalResponden(surveyRes.total_responden || surveyRes.daftar_responden.length);
@@ -536,6 +649,12 @@ function PIRFormWizard() {
           daftar_pertanyaan: daftarPertanyaan,
           kesimpulan_wawancara: kesimpulanWawancara,
           responden: responden,
+          disiapkan_oleh: disiapkanOleh,
+          disiapkan_jabatan: disiapkanJabatan,
+          direview_oleh: direviewOleh,
+          direview_jabatan: direviewJabatan,
+          disetujui_oleh: disetujuiOleh,
+          disetujui_jabatan: disetujuiJabatan,
           status: 'draft',
         });
         if (createRes && createRes.id) {
@@ -557,8 +676,11 @@ function PIRFormWizard() {
     try {
       setUploadingDokumentasi(true);
       setMessage(null);
-      await pirApi.uploadDokumentasi(formId, file, kategori, keteranganCustom || dokKeterangan);
-      setDokKeterangan('');
+      const ketToSave = (keteranganCustom || dokKeterangan || '').trim();
+      await pirApi.uploadDokumentasi(formId, file, kategori, ketToSave);
+      if (typeof window !== 'undefined' && ketToSave) {
+        localStorage.setItem(`pir_draft_dok_keterangan_${formId}`, ketToSave);
+      }
       const dokRes = await pirApi.getDokumentasi(formId);
       setDokumentasiList(dokRes || []);
       setMessage({ type: 'success', text: `Berkas dokumentasi "${file.name}" berhasil diunggah!` });
@@ -567,6 +689,22 @@ function PIRFormWizard() {
     } finally {
       setUploadingDokumentasi(false);
       setSubmitting(false);
+    }
+  };
+
+  const handleUpdateDokKeterangan = async (dokId: string, newKeterangan: string) => {
+    try {
+      await pirApi.updateDokumentasi(dokId, newKeterangan.trim());
+      setDokumentasiList((prev) =>
+        prev.map((d) => (d.id === dokId ? { ...d, keterangan: newKeterangan.trim() } : d))
+      );
+      if (typeof window !== 'undefined' && existingPIRId) {
+        localStorage.setItem(`pir_draft_dok_keterangan_${existingPIRId}`, newKeterangan.trim());
+      }
+      setEditingDokId(null);
+      setMessage({ type: 'success', text: 'Keterangan berkas berhasil diperbarui!' });
+    } catch (err: any) {
+      setMessage({ type: 'error', text: 'Gagal memperbarui keterangan: ' + err.message });
     }
   };
 
@@ -590,23 +728,28 @@ function PIRFormWizard() {
       setSubmitting(true);
       setMessage(null);
 
+      const stdQ = PIR_STANDARD_QUESTIONS_SCOPE.map((q) => ({
+        pertanyaan: q.judul,
+        tipe: q.tipe,
+        urutan: q.no,
+        kategori: q.kategori,
+      }));
+
       const allQ = [
-        { pertanyaan: 'Tingkat Kepuasan Pengguna terhadap Sistem', tipe: 'skala', urutan: 1 },
-        { pertanyaan: 'Kesesuaian Hasil Implementasi dengan Tujuan Awal', tipe: 'skala', urutan: 2 },
-        { pertanyaan: 'Kendala Operasional / Teknis yang Dihadapi', tipe: 'teks', urutan: 3 },
-        { pertanyaan: 'Saran Perbaikan dan Tindak Lanjut Sistem', tipe: 'pilihan', urutan: 4 },
+        ...stdQ,
         ...customQuestions.map((cq, idx) => ({
           id: cq.id,
           pertanyaan: cq.pertanyaan,
           tipe: cq.tipe,
-          urutan: 5 + idx,
+          urutan: 26 + idx,
+          kategori: 'Pertanyaan Khusus Proyek',
         })),
       ];
 
       await pirApi.saveQuestions(existingPIRId, { pertanyaan: allQ });
       setMessage({
         type: 'success',
-        text: 'Desain pertanyaan kuesioner berhasil disimpan! Tautan kuesioner siap dibagikan.',
+        text: 'Desain 25 butir kuesioner PIR standar berhasil disimpan! Tautan kuesioner siap dibagikan.',
       });
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'Gagal menyimpan pertanyaan' });
@@ -646,7 +789,20 @@ function PIRFormWizard() {
           custom_pertanyaan: [],
         });
 
-        // 3. Sinkronisasi draf laporan observasi ke Step 3 jika masih kosong
+        // 3. Simpan/sinkronkan keterangan berkas dokumentasi observasi
+        if (dokKeterangan.trim()) {
+          const obsFiles = dokumentasiList.filter((d) => d.kategori === 'observasi');
+          if (obsFiles.length > 0) {
+            await pirApi.updateDokumentasi(obsFiles[0].id, dokKeterangan.trim());
+            const dokRes = await pirApi.getDokumentasi(existingPIRId);
+            setDokumentasiList(dokRes || []);
+          }
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(`pir_draft_dok_keterangan_${existingPIRId}`, dokKeterangan.trim());
+          }
+        }
+
+        // 4. Sinkronisasi draf laporan observasi ke Step 3 jika masih kosong
         if (!ringkasanLaporan) {
           setRingkasanLaporan(
             `Berdasarkan hasil observasi langsung dan uji operasional lapangan oleh Tim TI: Sistem beroperasi dengan skor keandalan ${kepuasanSurvey}/5.0 dan kesesuaian fungsionalitas dengan sasaran awal mencapai ${(
@@ -685,7 +841,20 @@ function PIRFormWizard() {
           custom_pertanyaan: [],
         });
 
-        // 3. Sinkronisasi draf laporan wawancara ke Step 3 jika masih kosong
+        // 3. Simpan/sinkronkan keterangan berkas dokumentasi wawancara
+        if (dokKeterangan.trim()) {
+          const wawFiles = dokumentasiList.filter((d) => d.kategori === 'wawancara');
+          if (wawFiles.length > 0) {
+            await pirApi.updateDokumentasi(wawFiles[0].id, dokKeterangan.trim());
+            const dokRes = await pirApi.getDokumentasi(existingPIRId);
+            setDokumentasiList(dokRes || []);
+          }
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(`pir_draft_dok_keterangan_${existingPIRId}`, dokKeterangan.trim());
+          }
+        }
+
+        // 4. Sinkronisasi draf laporan wawancara ke Step 3 jika masih kosong
         if (!ringkasanLaporan) {
           setRingkasanLaporan(
             `Berdasarkan sesi wawancara terarah dengan ${respLabel}: Tingkat kepuasan terhadap sistem mencapai skor ${kepuasanSurvey}/5.0 dan pemenuhan kebutuhan unit kerja mencapai ${(
@@ -701,17 +870,22 @@ function PIRFormWizard() {
         }
       } else {
         // Metode Survey:
-        // 1. Simpan desain pertanyaan
+        // 1. Simpan desain pertanyaan lengkap (25 butir standar Google Form + kustom)
+        const stdQ = PIR_STANDARD_QUESTIONS_SCOPE.map((q) => ({
+          pertanyaan: q.judul,
+          tipe: q.tipe,
+          urutan: q.no,
+          kategori: q.kategori,
+        }));
+
         const allQ = [
-          { pertanyaan: 'Tingkat Kepuasan Pengguna terhadap Sistem', tipe: 'skala', urutan: 1 },
-          { pertanyaan: 'Kesesuaian Hasil Implementasi dengan Tujuan Awal', tipe: 'skala', urutan: 2 },
-          { pertanyaan: 'Kendala Operasional / Teknis yang Dihadapi', tipe: 'teks', urutan: 3 },
-          { pertanyaan: 'Saran Perbaikan dan Tindak Lanjut Sistem', tipe: 'pilihan', urutan: 4 },
+          ...stdQ,
           ...customQuestions.map((cq, idx) => ({
             id: cq.id,
             pertanyaan: cq.pertanyaan,
             tipe: cq.tipe,
-            urutan: 5 + idx,
+            urutan: 26 + idx,
+            kategori: 'Pertanyaan Khusus Proyek',
           })),
         ];
         await pirApi.saveQuestions(existingPIRId, { pertanyaan: allQ });
@@ -731,24 +905,65 @@ function PIRFormWizard() {
         // 3. Sinkronisasi otomatis ke Step 3 (Laporan)
         if (!ringkasanLaporan) {
           const finalScore = totalResponden > 0 ? (kepuasanAvg || kepuasanSurvey) : kepuasanSurvey;
-          const respText = totalResponden > 0 ? ` dari ${totalResponden} responden pengguna` : '';
+          const respCount = totalResponden > 0 ? totalResponden : (daftarResponden.length || 0);
+          const respText = respCount > 0 ? ` melibatkan evaluasi dari ${respCount} responden pengguna` : '';
+          const ringkasanKendala = summarizeFeedback(kendalaSurvey).replace(/\n/g, '; ');
           setRingkasanLaporan(
-            `Berdasarkan hasil kuesioner survei kepuasan sistem${respText}: Rata-rata tingkat kepuasan pengguna mencapai skor ${finalScore}/5.0 dan kesesuaian implementasi dengan tujuan pengembangan dinilai mencapai ${(
+            `Berdasarkan hasil kuesioner evaluasi sistem${respText}: Rata-rata tingkat kepuasan pengguna mencapai skor ${Number(finalScore).toFixed(1)}/5.0 dan kesesuaian implementasi dengan sasaran awal mencapai ${(
               (kesesuaianSurvey / 5) *
               100
-            ).toFixed(0)}%. ${kendalaSurvey ? `Catatan kendala pengguna: ${kendalaSurvey}.` : ''}`
+            ).toFixed(0)}%. ${ringkasanKendala ? `Rangkuman kendala yang dihimpun: ${ringkasanKendala}.` : 'Seluruh modul berjalan dengan baik tanpa kendala signifikan.'}`
           );
         }
         if (!rekomendasiLaporan && saranSurvey) {
-          setRekomendasiLaporan(saranSurvey);
+          const cleanSaran = summarizeFeedback(saranSurvey).replace(/\n/g, '; ');
+          setRekomendasiLaporan(
+            cleanSaran || 'Melaksanakan monitoring berkala dan optimalisasi sistem secara berkelanjutan bersama unit kerja terkait.'
+          );
         }
+      }
+
+      // Sinkronisasi otomatis temuan utama evaluasi ke Step 3 jika temuanList masih kosong
+      if (temuanList.length === 0) {
+        const generatedTemuan: string[] = [];
+        if (kendalaSurvey && kendalaSurvey.trim()) {
+          const summarizedLines = summarizeFeedback(kendalaSurvey)
+            .split('\n')
+            .map((l) => l.trim())
+            .filter((l) => l.length > 0);
+          generatedTemuan.push(...summarizedLines);
+        }
+
+        if (generatedTemuan.length === 0) {
+          if (metode === 'observasi') {
+            generatedTemuan.push(
+              catatanKondisi
+                ? `Hasil observasi kondisi lapangan: ${catatanKondisi}`
+                : 'Infrastruktur dan performa modul operasional berjalan stabil tanpa kendala kritis.'
+            );
+          } else if (metode === 'wawancara') {
+            generatedTemuan.push(
+              kesimpulanWawancara
+                ? `Rangkuman sesi wawancara: ${kesimpulanWawancara}`
+                : 'Unit kerja menyambut baik implementasi sistem dan alur kerja baru telah diadopsi.'
+            );
+          } else {
+            const respCount = totalResponden > 0 ? totalResponden : (daftarResponden.length || 0);
+            generatedTemuan.push(
+              respCount > 0
+                ? `Evaluasi dari ${respCount} responden menunjukkan fungsionalitas dan kinerja sistem beroperasi stabil sesuai target.`
+                : 'Tingkat adopsi user telah mencapai target operasional awal sesuai hasil evaluasi kuesioner.'
+            );
+          }
+        }
+        setTemuanList(generatedTemuan);
       }
 
       setMessage({
         type: 'success',
         text: proceed
           ? 'Hasil evaluasi disimpan! Melanjutkan ke Step 3 (Laporan PIR)...'
-          : 'Data evaluasi berhasil disimpan.',
+          : 'Data evaluasi (kendala teknis, rekomendasi, berkas bukti) berhasil disimpan sebagai draft.',
       });
 
       if (proceed) {
@@ -779,6 +994,16 @@ function PIRFormWizard() {
     try {
       setSubmitting(true);
       setMessage(null);
+
+      // Simpan pembaruan pejabat pengesahan ke form PIR
+      await pirApi.update(existingPIRId, {
+        disiapkan_oleh: disiapkanOleh,
+        disiapkan_jabatan: disiapkanJabatan,
+        direview_oleh: direviewOleh,
+        direview_jabatan: direviewJabatan,
+        disetujui_oleh: disetujuiOleh,
+        disetujui_jabatan: disetujuiJabatan,
+      });
 
       const kesesuaianPct = Math.round((kesesuaianSurvey / 5) * 100);
 
@@ -1408,6 +1633,125 @@ function PIRFormWizard() {
                 )}
               </div>
 
+              {/* 4. Pejabat Pengesahan Dokumen PIR (Berita Acara) */}
+              <div className="space-y-4 pt-4 border-t border-gray-100">
+                <div>
+                  <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold">
+                      4
+                    </span>
+                    Pejabat Pengesahan Dokumen PIR (Berita Acara)
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1 ml-8">
+                    Data pejabat penyiap, pereview, dan penyetujui yang tercetak pada lembar Berita Acara PIR resmi.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Disiapkan oleh */}
+                  <div className="p-4 bg-gray-50/80 border border-gray-200 rounded-xl space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                      <label className="text-xs font-bold text-gray-800 uppercase tracking-wide">
+                        Disiapkan Oleh
+                      </label>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+                        Nama Pejabat
+                      </label>
+                      <input
+                        type="text"
+                        value={disiapkanOleh}
+                        onChange={(e) => setDisiapkanOleh(e.target.value)}
+                        placeholder="Contoh: Budi Pratama"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-300 text-xs bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+                        Jabatan / Posisi
+                      </label>
+                      <input
+                        type="text"
+                        value={disiapkanJabatan}
+                        onChange={(e) => setDisiapkanJabatan(e.target.value)}
+                        placeholder="Contoh: TKNO Perencanaan & Tata Kelola TI"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-300 text-xs bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Direview oleh */}
+                  <div className="p-4 bg-gray-50/80 border border-gray-200 rounded-xl space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                      <label className="text-xs font-bold text-gray-800 uppercase tracking-wide">
+                        Direview Oleh
+                      </label>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+                        Nama Pejabat
+                      </label>
+                      <input
+                        type="text"
+                        value={direviewOleh}
+                        onChange={(e) => setDireviewOleh(e.target.value)}
+                        placeholder="Contoh: Rahmat Hidayat"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-300 text-xs bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-hidden"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+                        Jabatan / Posisi
+                      </label>
+                      <input
+                        type="text"
+                        value={direviewJabatan}
+                        onChange={(e) => setDireviewJabatan(e.target.value)}
+                        placeholder="Contoh: Senior Engineer Perencanaan & Tata Kelola TI"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-300 text-xs bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-hidden"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Disetujui oleh */}
+                  <div className="p-4 bg-gray-50/80 border border-gray-200 rounded-xl space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                      <label className="text-xs font-bold text-gray-800 uppercase tracking-wide">
+                        Disetujui Oleh
+                      </label>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+                        Nama Pejabat
+                      </label>
+                      <input
+                        type="text"
+                        value={disetujuiOleh}
+                        onChange={(e) => setDisetujuiOleh(e.target.value)}
+                        placeholder="Contoh: Ahmad Fauzi"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-300 text-xs bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-hidden"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+                        Jabatan / Posisi
+                      </label>
+                      <input
+                        type="text"
+                        value={disetujuiJabatan}
+                        onChange={(e) => setDisetujuiJabatan(e.target.value)}
+                        placeholder="Contoh: VP Departemen Teknologi Informasi PSP"
+                        className="w-full px-3 py-2 rounded-lg border border-gray-300 text-xs bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-hidden"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Action Buttons Step 1 */}
               <div className="pt-6 border-t border-gray-100 flex items-center justify-between">
                 <Button
@@ -1691,36 +2035,81 @@ function PIRFormWizard() {
                             .map((dok) => (
                               <div
                                 key={dok.id}
-                                className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-white hover:bg-slate-50/80 transition"
+                                className="flex flex-col p-3 rounded-xl border border-gray-200 bg-white hover:bg-slate-50/80 transition gap-2 shadow-2xs"
                               >
-                                <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                                    <FileText size={16} />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <a
-                                      href={dok.url.startsWith('http') ? dok.url : `http://localhost:8080${dok.url}`}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="text-xs font-bold text-gray-900 hover:text-emerald-700 truncate block underline underline-offset-2"
-                                      title={dok.nama_file}
-                                    >
-                                      {dok.nama_file}
-                                    </a>
-                                    <div className="flex items-center gap-2 text-[10px] text-gray-500 mt-0.5">
-                                      <span>{(dok.ukuran_bytes / 1024).toFixed(1)} KB</span>
-                                      {dok.keterangan && <span>• {dok.keterangan}</span>}
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                                      <FileText size={16} />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <a
+                                        href={dok.url.startsWith('http') ? dok.url : `http://localhost:8080${dok.url}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-xs font-bold text-gray-900 hover:text-emerald-700 truncate block underline underline-offset-2"
+                                        title={dok.nama_file}
+                                      >
+                                        {dok.nama_file}
+                                      </a>
+                                      <div className="text-[10px] text-gray-500">
+                                        {(dok.ukuran_bytes / 1024).toFixed(1)} KB
+                                      </div>
                                     </div>
                                   </div>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingDokId(dok.id);
+                                        setEditingDokText(dok.keterangan || '');
+                                      }}
+                                      className="text-gray-400 hover:text-emerald-600 p-1.5 rounded-md hover:bg-emerald-50 transition cursor-pointer"
+                                      title="Edit keterangan"
+                                    >
+                                      <Pencil size={13} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteDokumentasi(dok.id)}
+                                      className="text-gray-400 hover:text-rose-600 p-1.5 rounded-md hover:bg-rose-50 transition cursor-pointer"
+                                      title="Hapus berkas"
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  </div>
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteDokumentasi(dok.id)}
-                                  className="text-gray-400 hover:text-rose-600 p-1.5 rounded-md hover:bg-rose-50 transition shrink-0 cursor-pointer"
-                                  title="Hapus berkas"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
+                                {editingDokId === dok.id ? (
+                                  <div className="flex items-center gap-1.5 pt-1">
+                                    <input
+                                      type="text"
+                                      value={editingDokText}
+                                      onChange={(e) => setEditingDokText(e.target.value)}
+                                      placeholder="Deskripsi berkas..."
+                                      className="text-xs px-2 py-1 rounded border border-emerald-300 w-full focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUpdateDokKeterangan(dok.id, editingDokText)}
+                                      className="px-2.5 py-1 rounded bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 shrink-0 cursor-pointer"
+                                    >
+                                      Simpan
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingDokId(null)}
+                                      className="px-2 py-1 rounded text-gray-500 hover:text-gray-700 text-xs shrink-0 cursor-pointer"
+                                    >
+                                      Batal
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="text-[11px] text-gray-600 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100 flex items-center justify-between">
+                                    <span className="truncate italic">
+                                      {dok.keterangan ? `"${dok.keterangan}"` : 'Belum ada keterangan / deskripsi'}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             ))}
                         </div>
@@ -1990,36 +2379,81 @@ function PIRFormWizard() {
                             .map((dok) => (
                               <div
                                 key={dok.id}
-                                className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-white hover:bg-slate-50/80 transition"
+                                className="flex flex-col p-3 rounded-xl border border-gray-200 bg-white hover:bg-slate-50/80 transition gap-2 shadow-2xs"
                               >
-                                <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                                    <FileText size={16} />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <a
-                                      href={dok.url.startsWith('http') ? dok.url : `http://localhost:8080${dok.url}`}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="text-xs font-bold text-gray-900 hover:text-blue-700 truncate block underline underline-offset-2"
-                                      title={dok.nama_file}
-                                    >
-                                      {dok.nama_file}
-                                    </a>
-                                    <div className="flex items-center gap-2 text-[10px] text-gray-500 mt-0.5">
-                                      <span>{(dok.ukuran_bytes / 1024).toFixed(1)} KB</span>
-                                      {dok.keterangan && <span>• {dok.keterangan}</span>}
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                                      <FileText size={16} />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <a
+                                        href={dok.url.startsWith('http') ? dok.url : `http://localhost:8080${dok.url}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-xs font-bold text-gray-900 hover:text-blue-700 truncate block underline underline-offset-2"
+                                        title={dok.nama_file}
+                                      >
+                                        {dok.nama_file}
+                                      </a>
+                                      <div className="text-[10px] text-gray-500">
+                                        {(dok.ukuran_bytes / 1024).toFixed(1)} KB
+                                      </div>
                                     </div>
                                   </div>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingDokId(dok.id);
+                                        setEditingDokText(dok.keterangan || '');
+                                      }}
+                                      className="text-gray-400 hover:text-blue-600 p-1.5 rounded-md hover:bg-blue-50 transition cursor-pointer"
+                                      title="Edit keterangan"
+                                    >
+                                      <Pencil size={13} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteDokumentasi(dok.id)}
+                                      className="text-gray-400 hover:text-rose-600 p-1.5 rounded-md hover:bg-rose-50 transition cursor-pointer"
+                                      title="Hapus berkas"
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  </div>
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteDokumentasi(dok.id)}
-                                  className="text-gray-400 hover:text-rose-600 p-1.5 rounded-md hover:bg-rose-50 transition shrink-0 cursor-pointer"
-                                  title="Hapus berkas"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
+                                {editingDokId === dok.id ? (
+                                  <div className="flex items-center gap-1.5 pt-1">
+                                    <input
+                                      type="text"
+                                      value={editingDokText}
+                                      onChange={(e) => setEditingDokText(e.target.value)}
+                                      placeholder="Deskripsi berkas..."
+                                      className="text-xs px-2 py-1 rounded border border-blue-300 w-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUpdateDokKeterangan(dok.id, editingDokText)}
+                                      className="px-2.5 py-1 rounded bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 shrink-0 cursor-pointer"
+                                    >
+                                      Simpan
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingDokId(null)}
+                                      className="px-2 py-1 rounded text-gray-500 hover:text-gray-700 text-xs shrink-0 cursor-pointer"
+                                    >
+                                      Batal
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="text-[11px] text-gray-600 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100 flex items-center justify-between">
+                                    <span className="truncate italic">
+                                      {dok.keterangan ? `"${dok.keterangan}"` : 'Belum ada keterangan / deskripsi'}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             ))}
                         </div>
@@ -2240,6 +2674,7 @@ function PIRFormWizard() {
                                 <tr>
                                   <th className="py-2.5 px-3">No</th>
                                   <th className="py-2.5 px-3">Nama Responden</th>
+                                  <th className="py-2.5 px-3">No. Badge</th>
                                   <th className="py-2.5 px-3">Jabatan & Unit Kerja</th>
                                   <th className="py-2.5 px-3 text-center">Kepuasan</th>
                                   <th className="py-2.5 px-3">Kendala & Saran</th>
@@ -2250,7 +2685,10 @@ function PIRFormWizard() {
                                   <tr key={resp.id || idx} className="hover:bg-gray-50/70">
                                     <td className="py-2 px-3 text-gray-400 font-medium">{idx + 1}</td>
                                     <td className="py-2 px-3 font-bold text-gray-900">{resp.nama}</td>
-                                    <td className="py-2 px-3 text-gray-600">{resp.jabatan || resp.unit_kerja || '-'}</td>
+                                    <td className="py-2 px-3 font-mono font-semibold text-blue-700">{resp.no_badge || '-'}</td>
+                                    <td className="py-2 px-3 text-gray-600">
+                                      {resp.jabatan ? `${resp.jabatan} (${resp.unit_kerja || '-'})` : (resp.unit_kerja || '-')}
+                                    </td>
                                     <td className="py-2 px-3 text-center">
                                       <span className="inline-flex items-center gap-1 font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
                                         <Star size={11} className="fill-amber-400 text-amber-400" />
@@ -2363,49 +2801,72 @@ function PIRFormWizard() {
                           <FileSpreadsheet size={18} className="text-blue-600" />
                           Desain Butir Pertanyaan Kuesioner (Tampil di Tautan Publik)
                         </h4>
-                        <p className="text-xs text-gray-500 mt-0.5">Pertanyaan standar mutu PT PUSRI dan butir kustom tambahan.</p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Standar Post Implementation Review PT PUSRI (25 Butir mencakup Kualitas Sistem, Kualitas Data, Layanan TI, Kepuasan Pengguna, Dampak Kinerja, Manfaat Operasional %, dan Masukan Kualitatif).
+                        </p>
                       </div>
 
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          setCustomQuestions((prev) => [
-                            ...prev,
-                            { pertanyaan: '', tipe: 'teks', jawaban_teks: '' },
-                          ])
-                        }
-                        className="text-xs font-bold text-blue-700 border-blue-300 hover:bg-blue-50 rounded-xl cursor-pointer"
-                      >
-                        <Plus size={14} className="mr-1.5" />
-                        Tambah Pertanyaan Kustom
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowAllStandardQuestions(!showAllStandardQuestions)}
+                          className="text-xs font-semibold text-gray-700 border-gray-300 hover:bg-gray-50 rounded-xl cursor-pointer"
+                        >
+                          {showAllStandardQuestions ? 'Ciutkan Daftar' : `Lihat Semua (25 Butir)`}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            setCustomQuestions((prev) => [
+                              ...prev,
+                              { pertanyaan: '', tipe: 'teks', jawaban_teks: '' },
+                            ])
+                          }
+                          className="text-xs font-bold text-blue-700 border-blue-300 hover:bg-blue-50 rounded-xl cursor-pointer"
+                        >
+                          <Plus size={14} className="mr-1.5" />
+                          Tambah Pertanyaan Kustom
+                        </Button>
+                      </div>
                     </div>
 
-                    {/* 4 Pertanyaan Standar */}
+                    {/* 25 Pertanyaan Standar */}
                     <div className="space-y-2.5">
-                      {[
-                        { no: 1, judul: 'Tingkat Kepuasan Pengguna terhadap Sistem', tipe: 'Skala 1 - 5 (Rating Bintang)', desc: 'Keandalan, kecepatan, dan kemudahan pemakaian antarmuka.' },
-                        { no: 2, judul: 'Kesesuaian Hasil Implementasi dengan Tujuan Awal', tipe: 'Skala 1 - 5 (Persentase)', desc: 'Tercapainya target fungsionalitas sistem.' },
-                        { no: 3, judul: 'Kendala Operasional / Teknis yang Dihadapi', tipe: 'Isian Teks Panjang', desc: 'Catatan hambatan atau masalah selama pemakaian.' },
-                        { no: 4, judul: 'Saran Perbaikan dan Tindak Lanjut Sistem', tipe: 'Pilihan Ya / Tidak', desc: 'Apakah diperlukan tindakan perbaikan atau tindak lanjut lanjutan.' },
-                      ].map((q) => (
+                      {(showAllStandardQuestions
+                        ? PIR_STANDARD_QUESTIONS_SCOPE
+                        : PIR_STANDARD_QUESTIONS_SCOPE.slice(0, 5)
+                      ).map((q) => (
                         <div key={q.no} className="p-3 bg-gray-50/80 rounded-xl border border-gray-200/80 flex items-start justify-between gap-3 text-xs">
                           <div className="flex items-start gap-2.5">
                             <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">
                               {q.no}
                             </span>
                             <div>
-                              <p className="font-bold text-gray-900">{q.judul}</p>
-                              <p className="text-gray-500 text-[11px]">{q.desc}</p>
+                              <p className="font-bold text-gray-900 leading-snug">{q.judul}</p>
+                              <p className="text-gray-500 text-[11px] mt-0.5 flex items-center gap-1.5">
+                                <span className="text-emerald-700 font-semibold">{q.kategori}</span>
+                              </p>
                             </div>
                           </div>
                           <Badge variant="outline" className="text-[10px] font-semibold text-gray-600 bg-white shrink-0">
-                            {q.tipe}
+                            {q.tipe === 'skala' ? 'Skala 1 - 5' : q.tipe === 'pilihan' ? 'Pilihan %' : 'Teks Panjang'}
                           </Badge>
                         </div>
                       ))}
+
+                      {!showAllStandardQuestions && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAllStandardQuestions(true)}
+                          className="w-full py-2.5 rounded-xl border border-dashed border-gray-300 text-xs text-blue-700 hover:text-blue-900 hover:border-blue-300 font-bold bg-blue-50/30 transition text-center cursor-pointer"
+                        >
+                          + Tampilkan 20 Butir Pertanyaan Standar Lainnya
+                        </button>
+                      )}
                     </div>
 
                     {/* Pertanyaan Kustom jika ada */}
@@ -2417,7 +2878,7 @@ function PIRFormWizard() {
                         {customQuestions.map((q, idx) => (
                           <div key={idx} className="p-3.5 bg-blue-50/50 rounded-xl border border-blue-200 space-y-2.5">
                             <div className="flex items-center justify-between gap-3">
-                              <span className="text-xs font-bold text-gray-700">Pertanyaan #{idx + 5}</span>
+                              <span className="text-xs font-bold text-gray-700">Pertanyaan #{idx + 26}</span>
                               <div className="flex items-center gap-2">
                                 <select
                                   value={q.tipe}
@@ -2646,6 +3107,69 @@ function PIRFormWizard() {
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-xs sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+
+                {/* Penyesuaian Pejabat Pengesahan Dokumen Berita Acara */}
+                <div className="p-4 bg-gray-50/70 border border-gray-200/80 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-gray-800 uppercase tracking-wider">
+                      Pejabat Pengesahan Dokumen Berita Acara
+                    </label>
+                    <span className="text-[11px] text-gray-500">Dapat diedit langsung sebelum penerbitan</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="space-y-1.5">
+                      <span className="text-[11px] font-bold text-blue-700">Disiapkan Oleh:</span>
+                      <input
+                        type="text"
+                        value={disiapkanOleh}
+                        onChange={(e) => setDisiapkanOleh(e.target.value)}
+                        placeholder="Nama Pejabat"
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 text-xs bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={disiapkanJabatan}
+                        onChange={(e) => setDisiapkanJabatan(e.target.value)}
+                        placeholder="Jabatan"
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 text-xs bg-white text-gray-600"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <span className="text-[11px] font-bold text-indigo-700">Direview Oleh:</span>
+                      <input
+                        type="text"
+                        value={direviewOleh}
+                        onChange={(e) => setDireviewOleh(e.target.value)}
+                        placeholder="Nama Pejabat"
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 text-xs bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={direviewJabatan}
+                        onChange={(e) => setDireviewJabatan(e.target.value)}
+                        placeholder="Jabatan"
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 text-xs bg-white text-gray-600"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <span className="text-[11px] font-bold text-emerald-700">Disetujui Oleh:</span>
+                      <input
+                        type="text"
+                        value={disetujuiOleh}
+                        onChange={(e) => setDisetujuiOleh(e.target.value)}
+                        placeholder="Nama Pejabat"
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 text-xs bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={disetujuiJabatan}
+                        onChange={(e) => setDisetujuiJabatan(e.target.value)}
+                        placeholder="Jabatan"
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 text-xs bg-white text-gray-600"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* LIVE PREVIEW FORMAT RESMI PUSRI */}
@@ -2679,139 +3203,209 @@ function PIRFormWizard() {
                   </div>
                 </div>
 
-                {/* Kertas Dokumen Cetak */}
-                <div className="bg-white p-8 sm:p-10 rounded-2xl border-2 border-gray-300 shadow-md font-serif text-gray-800 space-y-6">
-                  {/* Kop Surat */}
-                  <div className="text-center border-b-2 border-blue-900 pb-4 space-y-1">
-                    <h2 className="text-lg sm:text-xl font-bold tracking-wide text-blue-950 uppercase font-sans">
-                      PT PUPUK SRIWIDJAJA PALEMBANG
-                    </h2>
-                    <h3 className="text-xs sm:text-sm font-bold text-emerald-800 tracking-wider font-sans">
-                      DIVISI TEKNOLOGI INFORMASI
-                    </h3>
-                    <p className="text-[11px] text-gray-500 font-sans">
-                      Jl. Mayor Zen, Palembang 30118, Sumatera Selatan | Telp: (0711) 712222 | ti@pusri.co.id
-                    </p>
-                  </div>
-
-                  {/* Header Judul */}
-                  <div className="text-center space-y-1">
-                    <h1 className="text-base sm:text-lg font-bold text-gray-900 uppercase underline tracking-wide">
-                      LAPORAN POST IMPLEMENTATION REVIEW (PIR)
-                    </h1>
-                    <p className="text-xs text-gray-600 font-mono">
-                      Nomor: {nomorPIRPreview}
-                    </p>
-                  </div>
-
-                  {/* Tabel Metadata */}
-                  <div className="border border-gray-300 rounded-lg overflow-hidden text-xs">
-                    <div className="bg-blue-50/80 px-3 py-1.5 font-bold text-blue-950 border-b border-gray-300 font-sans uppercase">
-                      A. Informasi Proyek Pengembangan TI
-                    </div>
-                    <table className="w-full font-sans">
-                      <tbody>
-                        <tr className="border-b border-gray-200">
-                          <td className="px-3 py-1.5 font-bold text-gray-600 w-44">Nama Kegiatan</td>
-                          <td className="px-3 py-1.5 text-gray-900 font-semibold">{proyek?.nama_kegiatan || '-'}</td>
-                        </tr>
-                        <tr className="border-b border-gray-200">
-                          <td className="px-3 py-1.5 font-bold text-gray-600">Unit Kerja Pemilik</td>
-                          <td className="px-3 py-1.5">{proyek?.unit_kerja || '-'}</td>
-                        </tr>
-                        <tr className="border-b border-gray-200">
-                          <td className="px-3 py-1.5 font-bold text-gray-600">Vendor / Pengembang</td>
-                          <td className="px-3 py-1.5">{vendor || '-'}</td>
-                        </tr>
-                        <tr className="border-b border-gray-200">
-                          <td className="px-3 py-1.5 font-bold text-gray-600">Tanggal Rilis</td>
-                          <td className="px-3 py-1.5">{proyek?.tanggal_go_live || '-'}</td>
-                        </tr>
-                        <tr>
-                          <td className="px-3 py-1.5 font-bold text-gray-600">Metode Evaluasi</td>
-                          <td className="px-3 py-1.5 capitalize font-semibold text-blue-700">{metode}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Ringkasan & Skor */}
-                  <div className="space-y-3 font-sans text-xs">
-                    <div className="bg-blue-50/80 px-3 py-1.5 font-bold text-blue-950 border border-gray-300 rounded-t-lg uppercase">
-                      B. Ringkasan & Indikator Keberhasilan
-                    </div>
-                    <div className="border-x border-b border-gray-300 p-4 -mt-3 rounded-b-lg space-y-3 bg-white">
-                      <p className="leading-relaxed text-gray-700">
-                        {ringkasanLaporan || 'Belum diisi.'}
-                      </p>
-                      <div className="grid grid-cols-2 gap-4 pt-2">
-                        <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200">
-                          <span className="block text-[11px] text-gray-500 font-bold uppercase">
-                            Skor Kepuasan Pengguna
-                          </span>
-                          <span className="text-lg font-bold text-blue-900">
-                            {kepuasanSurvey.toFixed(1)} / 5.0
-                          </span>
-                        </div>
-                        <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200">
-                          <span className="block text-[11px] text-gray-500 font-bold uppercase">
-                            Kesesuaian Target Tujuan
-                          </span>
-                          <span className="text-lg font-bold text-emerald-900">
-                            {((kesesuaianSurvey / 5) * 100).toFixed(0)}%
-                          </span>
-                        </div>
+                {/* Kertas Dokumen Cetak Berita Acara PUSRI (Format Template Page 1) */}
+                <div className="bg-white p-6 sm:p-8 rounded-2xl border-2 border-gray-300 shadow-md font-sans text-gray-900">
+                  <div className="border-2 border-black divide-y-2 divide-black text-xs sm:text-sm">
+                    {/* Header: Logo PUSRI (Kiri) & Judul Berita Acara (Kanan) */}
+                    <div className="grid grid-cols-12 divide-x-2 divide-black">
+                      <div className="col-span-4 p-3 flex items-center justify-center bg-white">
+                        <img
+                          src="/pusri_logo.png"
+                          alt="Logo PUSRI"
+                          className="max-h-14 object-contain"
+                          onError={(e) => {
+                            // Fallback jika image gagal load
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                      </div>
+                      <div className="col-span-8 p-3 flex flex-col items-center justify-center text-center">
+                        <h2 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
+                          Berita Acara
+                        </h2>
+                        <h3 className="text-sm sm:text-base font-bold text-gray-900">
+                          Post Implementation Review (PIR)
+                        </h3>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Temuan Utama */}
-                  <div className="space-y-2 font-sans text-xs">
-                    <div className="bg-blue-50/80 px-3 py-1.5 font-bold text-blue-950 border border-gray-300 rounded-t-lg uppercase">
-                      C. Temuan Utama Evaluasi
-                    </div>
-                    <div className="border-x border-b border-gray-300 p-4 -mt-2 rounded-b-lg bg-white">
-                      {temuanList.length === 0 ? (
-                        <p className="text-gray-400 italic">Tidak ada temuan khusus.</p>
-                      ) : (
-                        <ol className="list-decimal list-inside space-y-1.5 text-gray-700">
-                          {temuanList.map((t, idx) => (
-                            <li key={idx} className="leading-relaxed">
-                              {t}
-                            </li>
-                          ))}
-                        </ol>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Rekomendasi */}
-                  <div className="space-y-2 font-sans text-xs">
-                    <div className="bg-blue-50/80 px-3 py-1.5 font-bold text-blue-950 border border-gray-300 rounded-t-lg uppercase">
-                      D. Rekomendasi Tindak Lanjut
-                    </div>
-                    <div className="border-x border-b border-gray-300 p-4 -mt-2 rounded-b-lg bg-white">
-                      <p className="leading-relaxed text-gray-700">
-                        {rekomendasiLaporan ||
-                          'Menindaklanjuti seluruh temuan PIR bersama PIC terkait sesuai target waktu yang ditetapkan.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Tanda Tangan */}
-                  <div className="pt-8 flex justify-end font-sans text-xs">
-                    <div className="text-center w-60 space-y-12">
-                      <div>
-                        Palembang, {tanggalLaporan}
-                        <br />
-                        <strong>Disusun oleh,</strong>
+                    {/* Metadata Row: Aplikasi */}
+                    <div className="grid grid-cols-12 divide-x-2 divide-black">
+                      <div className="col-span-3 sm:col-span-3 p-2.5 font-bold bg-gray-50/50 text-gray-900 flex items-center">
+                        Aplikasi
                       </div>
-                      <div>
-                        <div className="font-bold underline text-gray-900">
-                          Budi Santoso
+                      <div className="col-span-9 sm:col-span-9 p-2.5 font-semibold text-gray-900 flex items-center">
+                        {proyek?.nama_kegiatan || '-'}
+                      </div>
+                    </div>
+
+                    {/* Metadata Row: Tanggal serah terima */}
+                    <div className="grid grid-cols-12 divide-x-2 divide-black">
+                      <div className="col-span-3 sm:col-span-3 p-2.5 font-bold bg-gray-50/50 text-gray-900 flex items-center">
+                        Tanggal serah terima
+                      </div>
+                      <div className="col-span-9 sm:col-span-9 p-2.5 text-gray-800 flex items-center">
+                        {formatTanggalIndo(proyek?.tanggal_go_live)}
+                      </div>
+                    </div>
+
+                    {/* Metadata Row: Perihal */}
+                    <div className="grid grid-cols-12 divide-x-2 divide-black">
+                      <div className="col-span-3 sm:col-span-3 p-2.5 font-bold bg-gray-50/50 text-gray-900 flex items-center">
+                        Perihal
+                      </div>
+                      <div className="col-span-9 sm:col-span-9 p-2.5 text-gray-800 flex items-center">
+                        Progres dan Evaluasi Digitalisasi {proyek?.nama_kegiatan || '-'} ({nomorPIRPreview})
+                      </div>
+                    </div>
+
+                    {/* Uraian Kegiatan (Bagian Inti) */}
+                    <div className="grid grid-cols-12 divide-x-2 divide-black">
+                      <div className="col-span-3 sm:col-span-3 p-2.5 font-bold bg-gray-50/50 text-gray-900">
+                        Uraian Kegiatan
+                      </div>
+                      <div className="col-span-9 sm:col-span-9 p-3 sm:p-4 space-y-4 leading-relaxed text-gray-800 text-xs sm:text-[13px]">
+                        <p>
+                          Telah dilaksanakan kegiatan Post Implementation Review (PIR) sebagai bagian dari evaluasi pasca implementasi sistem. Kegiatan ini dilakukan untuk meninjau hasil pelaksanaan implementasi, memastikan kesesuaian sistem dengan kebutuhan dan proses bisnis yang telah ditetapkan, mengidentifikasi kendala atau permasalahan yang masih ditemukan, serta mengevaluasi efektivitas penggunaan sistem setelah implementasi.
+                        </p>
+
+                        {/* Hasil Evaluasi Khusus Berdasarkan Metode */}
+                        <div className="p-3 rounded-lg border border-gray-300 bg-gray-50/80 space-y-2">
+                          <div className="font-bold text-gray-900 uppercase text-xs tracking-wider border-b border-gray-200 pb-1 flex items-center justify-between">
+                            <span>Hasil Evaluasi PIR (Metode: {metode})</span>
+                            <span className="text-[11px] font-semibold text-blue-800 capitalize bg-blue-100 px-2 py-0.5 rounded">
+                              {metode}
+                            </span>
+                          </div>
+
+                          {metode === 'observasi' ? (
+                            <div className="space-y-2">
+                              <p className="text-gray-700">
+                                <strong>Ringkasan:</strong> {ringkasanLaporan || 'Pengujian langsung operasional sistem di lapangan oleh Tim TI menunjukkan sistem berjalan stabil.'}
+                              </p>
+                              {catatanKondisi && (
+                                <p className="text-gray-700 italic">
+                                  <strong>Kondisi Lapangan:</strong> "{catatanKondisi}"
+                                </p>
+                              )}
+                              <div className="text-[11px] text-gray-600 bg-white p-2 rounded border border-gray-200">
+                                <strong>Status 4 Aspek Evaluasi Tim TI:</strong> Fungsionalitas Modul (✓), Kinerja & Respon Sistem (✓), Ketersediaan High Availability (✓), Keamanan Hak Akses (✓).
+                              </div>
+                              <div className="flex items-center gap-4 pt-1 font-semibold text-xs">
+                                <span className="text-blue-900">Skor Keandalan Operasional: {kepuasanSurvey.toFixed(1)} / 5.0</span>
+                                <span className="text-emerald-900">Kesesuaian Spesifikasi Teknis: {((kesesuaianSurvey / 5) * 100).toFixed(0)}%</span>
+                              </div>
+                            </div>
+                          ) : metode === 'wawancara' ? (
+                            <div className="space-y-2">
+                              {(namaNarasumber || jabatanNarasumber) && (
+                                <p className="text-gray-700">
+                                  <strong>Narasumber:</strong> {namaNarasumber || '-'} {jabatanNarasumber ? `(${jabatanNarasumber})` : ''}
+                                </p>
+                              )}
+                              <p className="text-gray-700">
+                                <strong>Ringkasan:</strong> {ringkasanLaporan || 'Sesi wawancara terarah dilakukan bersama pemangku kepentingan untuk meninjau pemenuhan kebutuhan bisnis.'}
+                              </p>
+                              {kesimpulanWawancara && (
+                                <p className="text-gray-700 italic">
+                                  <strong>Rangkuman Masukan:</strong> "{kesimpulanWawancara}"
+                                </p>
+                              )}
+                              <div className="flex items-center gap-4 pt-1 font-semibold text-xs">
+                                <span className="text-blue-900">Skor Kepuasan Narasumber: {kepuasanSurvey.toFixed(1)} / 5.0</span>
+                                <span className="text-emerald-900">Pemenuhan Kebutuhan Unit Kerja: {((kesesuaianSurvey / 5) * 100).toFixed(0)}%</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <p className="text-gray-700">
+                                <strong>Sasaran Responden:</strong> {responden || 'Pengguna Sistem'} ({totalResponden} Responden Berpartisipasi)
+                              </p>
+                              <p className="text-gray-700">
+                                <strong>Ringkasan:</strong> {ringkasanLaporan || 'Evaluasi kuesioner komprehensif mengukur tingkat kepuasan, adopsi, dan dampak implementasi sistem.'}
+                              </p>
+                              <div className="text-[11px] text-gray-600 bg-white p-2 rounded border border-gray-200">
+                                <strong>Cakupan Dimensi Evaluasi:</strong> Kualitas Antarmuka & Sistem, Kualitas Data & Informasi, Layanan Helpdesk TI, Kepuasan & Adopsi Pengguna, Dampak Kinerja & Manfaat Implementasi.
+                              </div>
+                              <div className="flex items-center gap-4 pt-1 font-semibold text-xs">
+                                <span className="text-blue-900">Rata-rata Skor Kepuasan (CSAT): {kepuasanSurvey.toFixed(1)} / 5.0</span>
+                                <span className="text-emerald-900">Kesesuaian Harapan Pengguna: {((kesesuaianSurvey / 5) * 100).toFixed(0)}%</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <div className="text-gray-500 text-[11px]">
-                          Divisi Teknologi Informasi PT PUSRI
+
+                        {/* Temuan Utama */}
+                        <div className="space-y-1">
+                          <strong className="block text-gray-900 font-semibold">Temuan Utama Evaluasi:</strong>
+                          {temuanList.length === 0 ? (
+                            <p className="text-gray-500 italic">Tidak ada kendala kritis yang dilaporkan; sistem beroperasi dengan normal.</p>
+                          ) : (
+                            <ol className="list-decimal list-inside space-y-0.5 text-gray-700">
+                              {temuanList.map((t, idx) => (
+                                <li key={idx}>{cleanAnonymizedText(t)}</li>
+                              ))}
+                            </ol>
+                          )}
+                        </div>
+
+                        {/* Rekomendasi Tindak Lanjut */}
+                        <div className="space-y-1">
+                          <strong className="block text-gray-900 font-semibold">Rekomendasi Tindak Lanjut:</strong>
+                          <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                            {summarizeFeedback(rekomendasiLaporan) || 'Melaksanakan monitoring berkala dan menindaklanjuti seluruh temuan PIR bersama pihak terkait.'}
+                          </p>
+                        </div>
+
+                        <p className="pt-1">
+                          Hasil review selanjutnya menjadi dasar dalam menentukan rekomendasi dan tindak lanjut perbaikan yang diperlukan untuk mendukung optimalisasi penggunaan sistem.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Baris Tanggal */}
+                    <div className="p-2.5 font-bold text-gray-900 bg-white">
+                      Palembang, {formatTanggalIndo(tanggalLaporan)}
+                    </div>
+
+                    {/* Baris Tanda Tangan: 3 Kolom Berita Acara PUSRI */}
+                    <div className="grid grid-cols-3 divide-x-2 divide-black text-center">
+                      {/* Kolom 1 */}
+                      <div className="flex flex-col justify-between p-3 min-h-35">
+                        <div className="font-bold text-gray-900">Disiapkan oleh</div>
+                        <div className="space-y-0.5">
+                          <div className="font-bold underline text-gray-900">
+                            {disiapkanOleh || 'Budi Pratama'}
+                          </div>
+                          <div className="text-[11px] text-gray-600">
+                            {disiapkanJabatan || 'TKNO Perencanaan & Tata Kelola TI'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Kolom 2 */}
+                      <div className="flex flex-col justify-between p-3 min-h-35">
+                        <div className="font-bold text-gray-900">Direview oleh</div>
+                        <div className="space-y-0.5">
+                          <div className="font-bold underline text-gray-900">
+                            {direviewOleh || 'Rahmat Hidayat'}
+                          </div>
+                          <div className="text-[11px] text-gray-600">
+                            {direviewJabatan || 'Senior Engineer Perencanaan & Tata Kelola TI'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Kolom 3 */}
+                      <div className="flex flex-col justify-between p-3 min-h-35">
+                        <div className="font-bold text-gray-900">Disetujui oleh</div>
+                        <div className="space-y-0.5">
+                          <div className="font-bold underline text-gray-900">
+                            {disetujuiOleh || 'Ahmad Fauzi'}
+                          </div>
+                          <div className="text-[11px] text-gray-600">
+                            {disetujuiJabatan || 'VP Departemen Teknologi Informasi PSP'}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -3103,6 +3697,44 @@ function PIRFormWizard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Floating Toast Notification (Always visible regardless of scroll position) */}
+      {message && (
+        <div className="fixed bottom-6 right-6 z-50 max-w-md w-full animate-in slide-in-from-bottom-5 duration-300">
+          <div
+            className={`flex items-start justify-between gap-3 p-4 rounded-2xl border shadow-2xl backdrop-blur-md ${
+              message.type === 'success'
+                ? 'bg-slate-900/95 text-white border-emerald-500/50 shadow-emerald-950/30'
+                : 'bg-rose-950/95 text-white border-rose-500/50 shadow-rose-950/30'
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              {message.type === 'success' ? (
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                  <CheckCircle2 size={18} />
+                </div>
+              ) : (
+                <div className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
+                  <AlertCircle size={18} />
+                </div>
+              )}
+              <div className="text-xs sm:text-sm font-medium leading-relaxed pr-2">
+                <span className="font-bold block text-[13px] mb-0.5">
+                  {message.type === 'success' ? 'Berhasil Disimpan' : 'Pemberitahuan'}
+                </span>
+                {message.text}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMessage(null)}
+              className="text-white/60 hover:text-white p-1 rounded-lg hover:bg-white/10 transition shrink-0 cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

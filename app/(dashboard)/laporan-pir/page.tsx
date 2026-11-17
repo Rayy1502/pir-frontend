@@ -26,6 +26,7 @@ import { LaporanPIR } from '@/types/pir';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { formatTanggalIndo, cleanAnonymizedText, summarizeFeedback } from '@/lib/utils';
 
 function LaporanPIRContent() {
   const [laporanList, setLaporanList] = useState<LaporanPIR[]>([]);
@@ -259,7 +260,7 @@ function LaporanPIRContent() {
                           {lap.proyek?.unit_kerja || '-'}
                         </td>
                         <td className="px-5 py-4 whitespace-nowrap text-gray-500 text-xs">
-                          {lap.tanggal_laporan}
+                          {formatTanggalIndo(lap.tanggal_laporan)}
                         </td>
                         <td className="px-5 py-4 text-center whitespace-nowrap">
                           {hasTTD ? (
@@ -431,124 +432,208 @@ function LaporanPIRContent() {
               </div>
             )}
 
-            {/* Dokumen format resmi PUSRI */}
-            <div className="bg-white p-6 sm:p-8 rounded-2xl border-2 border-gray-200 shadow-sm space-y-6">
-              {/* Kop Surat */}
-              <div className="text-center border-b-2 border-blue-900 pb-4 space-y-1">
-                <h2 className="text-lg font-bold tracking-wide text-blue-950 uppercase">
-                  PT PUPUK SRIWIDJAJA PALEMBANG
-                </h2>
-                <h3 className="text-xs font-bold text-emerald-800 tracking-wider">
-                  DIVISI TEKNOLOGI INFORMASI
-                </h3>
-                <p className="text-[11px] text-gray-500">
-                  Jl. Mayor Zen, Palembang 30118, Sumatera Selatan | ti@pusri.co.id
-                </p>
-              </div>
-
-              {/* Judul & Nomor */}
-              <div className="text-center space-y-1">
-                <h1 className="text-base font-bold text-gray-900 uppercase underline">
-                  LAPORAN POST IMPLEMENTATION REVIEW (PIR)
-                </h1>
-                <p className="text-xs text-gray-600 font-mono">
-                  Nomor: {selectedLaporan.nomor_pir}
-                </p>
-              </div>
-
-              {/* Metadata */}
-              <div className="border border-gray-200 rounded-lg overflow-hidden text-xs">
-                <div className="bg-blue-50/80 px-3 py-1.5 font-bold text-blue-950 border-b border-gray-200 uppercase">
-                  A. Identitas Proyek TI
-                </div>
-                <table className="w-full">
-                  <tbody>
-                    <tr className="border-b border-gray-100">
-                      <td className="px-3 py-2 font-bold text-gray-500 w-44">Nama Kegiatan</td>
-                      <td className="px-3 py-2 text-gray-900 font-semibold">
-                        {selectedLaporan.proyek?.nama_kegiatan}
-                      </td>
-                    </tr>
-                    <tr className="border-b border-gray-100">
-                      <td className="px-3 py-2 font-bold text-gray-500">Unit Kerja</td>
-                      <td className="px-3 py-2">{selectedLaporan.proyek?.unit_kerja}</td>
-                    </tr>
-                    <tr className="border-b border-gray-100">
-                      <td className="px-3 py-2 font-bold text-gray-500">Vendor</td>
-                      <td className="px-3 py-2">{selectedLaporan.proyek?.vendor || '-'}</td>
-                    </tr>
-                    <tr>
-                      <td className="px-3 py-2 font-bold text-gray-500">Tanggal Rilis</td>
-                      <td className="px-3 py-2">{selectedLaporan.proyek?.tanggal_go_live}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Ringkasan */}
-              <div className="space-y-2 text-xs">
-                <div className="bg-blue-50/80 px-3 py-1.5 font-bold text-blue-950 border border-gray-200 rounded-t-lg uppercase">
-                  B. Ringkasan Evaluasi
-                </div>
-                <div className="border-x border-b border-gray-200 p-4 -mt-2 rounded-b-lg space-y-3">
-                  <p className="leading-relaxed text-gray-700">{selectedLaporan.ringkasan}</p>
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200">
-                      <span className="block text-[11px] text-gray-500 font-bold uppercase">
-                        Skor Kepuasan
-                      </span>
-                      <span className="text-base font-bold text-blue-900">
-                        {selectedLaporan.kepuasan?.toFixed(1)} / 5.0
-                      </span>
-                    </div>
-                    <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200">
-                      <span className="block text-[11px] text-gray-500 font-bold uppercase">
-                        Kesesuaian Target
-                      </span>
-                      <span className="text-base font-bold text-emerald-900">
-                        {selectedLaporan.kesesuaian_tujuan}%
-                      </span>
-                    </div>
+            {/* Dokumen format resmi Berita Acara PUSRI (Page 1 Template) */}
+            <div className="bg-white p-4 sm:p-6 rounded-2xl border-2 border-gray-300 shadow-sm font-sans text-gray-900">
+              <div className="border-2 border-black divide-y-2 divide-black text-xs sm:text-sm">
+                {/* Header: Logo PUSRI (Kiri) & Judul Berita Acara (Kanan) */}
+                <div className="grid grid-cols-12 divide-x-2 divide-black">
+                  <div className="col-span-4 p-3 flex items-center justify-center bg-white">
+                    <img
+                      src="/pusri_logo.png"
+                      alt="Logo PUSRI"
+                      className="max-h-14 object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                  <div className="col-span-8 p-3 flex flex-col items-center justify-center text-center">
+                    <h2 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
+                      Berita Acara
+                    </h2>
+                    <h3 className="text-sm sm:text-base font-bold text-gray-900">
+                      Post Implementation Review (PIR)
+                    </h3>
                   </div>
                 </div>
-              </div>
 
-              {/* Rekomendasi */}
-              <div className="space-y-2 text-xs">
-                <div className="bg-blue-50/80 px-3 py-1.5 font-bold text-blue-950 border border-gray-200 rounded-t-lg uppercase">
-                  C. Rekomendasi
+                {/* Metadata Row: Aplikasi */}
+                <div className="grid grid-cols-12 divide-x-2 divide-black">
+                  <div className="col-span-3 sm:col-span-3 p-2.5 font-bold bg-gray-50/50 text-gray-900 flex items-center">
+                    Aplikasi
+                  </div>
+                  <div className="col-span-9 sm:col-span-9 p-2.5 font-semibold text-gray-900 flex items-center">
+                    {selectedLaporan.proyek?.nama_kegiatan || '-'}
+                  </div>
                 </div>
-                <div className="border-x border-b border-gray-200 p-4 -mt-2 rounded-b-lg">
-                  <p className="leading-relaxed text-gray-700">
-                    {selectedLaporan.rekomendasi || 'Tidak ada rekomendasi khusus.'}
-                  </p>
-                </div>
-              </div>
 
-              {/* Kolom Tanda Tangan Resmi Format PT PUSRI */}
-              <div className="pt-6 border-t border-gray-200">
-                <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-6 text-center">
-                  Pengesahan Dokumen Evaluasi Pasca Implementasi (PIR)
+                {/* Metadata Row: Tanggal serah terima */}
+                <div className="grid grid-cols-12 divide-x-2 divide-black">
+                  <div className="col-span-3 sm:col-span-3 p-2.5 font-bold bg-gray-50/50 text-gray-900 flex items-center">
+                    Tanggal serah terima
+                  </div>
+                  <div className="col-span-9 sm:col-span-9 p-2.5 text-gray-800 flex items-center">
+                    {formatTanggalIndo(selectedLaporan.proyek?.tanggal_go_live)}
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-8 text-center text-xs">
-                  <div className="space-y-12">
-                    <div>
-                      <span className="font-semibold text-gray-700 block">Disusun oleh:</span>
-                      <span className="text-gray-500">Staff Pemilik Kegiatan TI</span>
+
+                {/* Metadata Row: Perihal */}
+                <div className="grid grid-cols-12 divide-x-2 divide-black">
+                  <div className="col-span-3 sm:col-span-3 p-2.5 font-bold bg-gray-50/50 text-gray-900 flex items-center">
+                    Perihal
+                  </div>
+                  <div className="col-span-9 sm:col-span-9 p-2.5 text-gray-800 flex items-center">
+                    Progres dan Evaluasi Digitalisasi {selectedLaporan.proyek?.nama_kegiatan || '-'} ({selectedLaporan.nomor_pir})
+                  </div>
+                </div>
+
+                {/* Uraian Kegiatan (Bagian Inti) */}
+                <div className="grid grid-cols-12 divide-x-2 divide-black">
+                  <div className="col-span-3 sm:col-span-3 p-2.5 font-bold bg-gray-50/50 text-gray-900">
+                    Uraian Kegiatan
+                  </div>
+                  <div className="col-span-9 sm:col-span-9 p-3 sm:p-4 space-y-4 leading-relaxed text-gray-800 text-xs sm:text-[13px]">
+                    <p>
+                      Telah dilaksanakan kegiatan Post Implementation Review (PIR) sebagai bagian dari evaluasi pasca implementasi sistem. Kegiatan ini dilakukan untuk meninjau hasil pelaksanaan implementasi, memastikan kesesuaian sistem dengan kebutuhan dan proses bisnis yang telah ditetapkan, mengidentifikasi kendala atau permasalahan yang masih ditemukan, serta mengevaluasi efektivitas penggunaan sistem setelah implementasi.
+                    </p>
+
+                    {/* Hasil Evaluasi Khusus Berdasarkan Metode */}
+                    <div className="p-3 rounded-lg border border-gray-300 bg-gray-50/80 space-y-2">
+                      <div className="font-bold text-gray-900 uppercase text-xs tracking-wider border-b border-gray-200 pb-1 flex items-center justify-between">
+                        <span>Hasil Evaluasi PIR (Metode: {selectedLaporan.pir_form?.metode || 'survey'})</span>
+                        <span className="text-[11px] font-semibold text-blue-800 capitalize bg-blue-100 px-2 py-0.5 rounded">
+                          {selectedLaporan.pir_form?.metode || 'survey'}
+                        </span>
+                      </div>
+
+                      {selectedLaporan.pir_form?.metode === 'observasi' ? (
+                        <div className="space-y-2">
+                          <p className="text-gray-700">
+                            <strong>Ringkasan:</strong> {selectedLaporan.ringkasan || 'Pengujian langsung operasional sistem di lapangan oleh Tim TI menunjukkan sistem berjalan stabil.'}
+                          </p>
+                          {selectedLaporan.pir_form?.catatan_kondisi && (
+                            <p className="text-gray-700 italic">
+                              <strong>Kondisi Lapangan:</strong> "{selectedLaporan.pir_form.catatan_kondisi}"
+                            </p>
+                          )}
+                          <div className="text-[11px] text-gray-600 bg-white p-2 rounded border border-gray-200">
+                            <strong>Status 4 Aspek Evaluasi Tim TI:</strong> Fungsionalitas Modul (✓), Kinerja & Respon Sistem (✓), Ketersediaan High Availability (✓), Keamanan Hak Akses (✓).
+                          </div>
+                          <div className="flex items-center gap-4 pt-1 font-semibold text-xs">
+                            <span className="text-blue-900">Skor Keandalan Operasional: {selectedLaporan.kepuasan?.toFixed(1)} / 5.0</span>
+                            <span className="text-emerald-900">Kesesuaian Spesifikasi Teknis: {selectedLaporan.kesesuaian_tujuan}%</span>
+                          </div>
+                        </div>
+                      ) : selectedLaporan.pir_form?.metode === 'wawancara' ? (
+                        <div className="space-y-2">
+                          {(selectedLaporan.pir_form?.nama_narasumber || selectedLaporan.pir_form?.jabatan_narasumber) && (
+                            <p className="text-gray-700">
+                              <strong>Narasumber:</strong> {selectedLaporan.pir_form?.nama_narasumber || '-'} {selectedLaporan.pir_form?.jabatan_narasumber ? `(${selectedLaporan.pir_form.jabatan_narasumber})` : ''}
+                            </p>
+                          )}
+                          <p className="text-gray-700">
+                            <strong>Ringkasan:</strong> {selectedLaporan.ringkasan || 'Sesi wawancara terarah dilakukan bersama pemangku kepentingan untuk meninjau pemenuhan kebutuhan bisnis.'}
+                          </p>
+                          {selectedLaporan.pir_form?.kesimpulan_wawancara && (
+                            <p className="text-gray-700 italic">
+                              <strong>Rangkuman Masukan:</strong> "{selectedLaporan.pir_form.kesimpulan_wawancara}"
+                            </p>
+                          )}
+                          <div className="flex items-center gap-4 pt-1 font-semibold text-xs">
+                            <span className="text-blue-900">Skor Kepuasan Narasumber: {selectedLaporan.kepuasan?.toFixed(1)} / 5.0</span>
+                            <span className="text-emerald-900">Pemenuhan Kebutuhan Unit Kerja: {selectedLaporan.kesesuaian_tujuan}%</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {selectedLaporan.pir_form?.responden && (
+                            <p className="text-gray-700">
+                              <strong>Sasaran Responden:</strong> {selectedLaporan.pir_form.responden}
+                            </p>
+                          )}
+                          <p className="text-gray-700">
+                            <strong>Ringkasan:</strong> {selectedLaporan.ringkasan || 'Evaluasi kuesioner komprehensif mengukur tingkat kepuasan, adopsi, dan dampak implementasi sistem.'}
+                          </p>
+                          <div className="text-[11px] text-gray-600 bg-white p-2 rounded border border-gray-200">
+                            <strong>Cakupan Dimensi Evaluasi:</strong> Kualitas Antarmuka & Sistem, Kualitas Data & Informasi, Layanan Helpdesk TI, Kepuasan & Adopsi Pengguna, Dampak Kinerja & Manfaat Implementasi.
+                          </div>
+                          <div className="flex items-center gap-4 pt-1 font-semibold text-xs">
+                            <span className="text-blue-900">Rata-rata Skor Kepuasan (CSAT): {selectedLaporan.kepuasan?.toFixed(1)} / 5.0</span>
+                            <span className="text-emerald-900">Kesesuaian Harapan Pengguna: {selectedLaporan.kesesuaian_tujuan}%</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <span className="font-bold text-gray-900 underline block">( Tim TI Pengusul )</span>
-                      <span className="text-[10px] text-gray-400">PT Pupuk Sriwidjaja Palembang</span>
+
+                    {/* Temuan Utama */}
+                    {selectedLaporan.temuan && selectedLaporan.temuan.length > 0 && (
+                      <div className="space-y-1">
+                        <strong className="block text-gray-900 font-semibold">Temuan Utama Evaluasi:</strong>
+                        <ol className="list-decimal list-inside space-y-0.5 text-gray-700">
+                          {selectedLaporan.temuan.map((t, idx) => (
+                            <li key={idx}>{cleanAnonymizedText(t.temuan)}</li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+
+                    {/* Rekomendasi Tindak Lanjut */}
+                    <div className="space-y-1">
+                      <strong className="block text-gray-900 font-semibold">Rekomendasi Tindak Lanjut:</strong>
+                      <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                        {summarizeFeedback(selectedLaporan.rekomendasi) || 'Melaksanakan monitoring berkala dan menindaklanjuti seluruh temuan PIR bersama pihak terkait.'}
+                      </p>
+                    </div>
+
+                    <p className="pt-1">
+                      Hasil review selanjutnya menjadi dasar dalam menentukan rekomendasi dan tindak lanjut perbaikan yang diperlukan untuk mendukung optimalisasi penggunaan sistem.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Baris Tanggal */}
+                <div className="p-2.5 font-bold text-gray-900 bg-white">
+                  Palembang, {formatTanggalIndo(selectedLaporan.tanggal_laporan)}
+                </div>
+
+                {/* Baris Tanda Tangan: 3 Kolom Berita Acara PUSRI */}
+                <div className="grid grid-cols-3 divide-x-2 divide-black text-center">
+                  {/* Kolom 1 */}
+                  <div className="flex flex-col justify-between p-3 min-h-35">
+                    <div className="font-bold text-gray-900">Disiapkan oleh</div>
+                    <div className="space-y-0.5">
+                      <div className="font-bold underline text-gray-900">
+                        {selectedLaporan.pir_form?.disiapkan_oleh || selectedLaporan.pembuat_nama || 'Budi Pratama'}
+                      </div>
+                      <div className="text-[11px] text-gray-600">
+                        {selectedLaporan.pir_form?.disiapkan_jabatan || 'TKNO Perencanaan & Tata Kelola TI'}
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-12">
-                    <div>
-                      <span className="font-semibold text-gray-700 block">Menyetujui:</span>
-                      <span className="text-gray-500">Vice President Teknologi Informasi</span>
+
+                  {/* Kolom 2 */}
+                  <div className="flex flex-col justify-between p-3 min-h-35">
+                    <div className="font-bold text-gray-900">Direview oleh</div>
+                    <div className="space-y-0.5">
+                      <div className="font-bold underline text-gray-900">
+                        {selectedLaporan.pir_form?.direview_oleh || 'Rahmat Hidayat'}
+                      </div>
+                      <div className="text-[11px] text-gray-600">
+                        {selectedLaporan.pir_form?.direview_jabatan || 'Senior Engineer Perencanaan & Tata Kelola TI'}
+                      </div>
                     </div>
-                    <div>
-                      <span className="font-bold text-gray-900 underline block">( VP TEKNOLOGI INFORMASI )</span>
-                      <span className="text-[10px] text-gray-400">PT Pupuk Sriwidjaja Palembang</span>
+                  </div>
+
+                  {/* Kolom 3 */}
+                  <div className="flex flex-col justify-between p-3 min-h-35">
+                    <div className="font-bold text-gray-900">Disetujui oleh</div>
+                    <div className="space-y-0.5">
+                      <div className="font-bold underline text-gray-900">
+                        {selectedLaporan.pir_form?.disetujui_oleh || 'Ahmad Fauzi'}
+                      </div>
+                      <div className="text-[11px] text-gray-600">
+                        {selectedLaporan.pir_form?.disetujui_jabatan || 'VP Departemen Teknologi Informasi PSP'}
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -35,6 +35,17 @@ function TindakLanjutContent() {
   const [selectedItemForUpload, setSelectedItemForUpload] = useState<TindakLanjut | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Auto-dismiss toast
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => {
+        setToastMessage(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
 
   const fetchItems = () => {
     setLoading(true);
@@ -66,6 +77,16 @@ function TindakLanjutContent() {
 
       setItems((prev) =>
         prev.map((t) => (t.id === id ? { ...t, status: newStatus } : t))
+      );
+
+      const statusLabel =
+        newStatus === 'done'
+          ? 'Done (Selesai)'
+          : newStatus === 'in_progress'
+          ? 'In Progress (Sedang Dikerjakan)'
+          : 'Open (Menunggu Tindak Lanjut)';
+      setToastMessage(
+        `Status temuan "${item.temuan.length > 35 ? item.temuan.slice(0, 35) + '...' : item.temuan}" berhasil diperbarui ke: ${statusLabel}`
       );
     } catch (err: any) {
       alert('Gagal memperbarui status: ' + err.message);
@@ -107,6 +128,7 @@ function TindakLanjutContent() {
             }
           : null
       );
+      setToastMessage(`Berkas bukti "${file.name}" berhasil diunggah!`);
     } catch (err: any) {
       setUploadError(err.message || 'Gagal mengunggah file bukti');
     } finally {
@@ -336,12 +358,25 @@ function TindakLanjutContent() {
                       {/* Bukti Lampiran */}
                       <td className="px-5 py-4 text-center whitespace-nowrap">
                         {item.bukti && item.bukti.length > 0 ? (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 font-bold text-xs border border-emerald-200">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedItemForUpload(item)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-200 transition cursor-pointer"
+                            title="Klik untuk melihat bukti lampiran"
+                          >
                             <FileCheck size={14} />
-                            <span>{item.bukti.length} Bukti</span>
-                          </div>
+                            <span>{item.bukti.length} Berkas Bukti</span>
+                          </button>
                         ) : (
-                          <span className="text-gray-400 text-xs italic">Belum ada</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedItemForUpload(item)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-gray-700 text-xs border border-gray-200 transition cursor-pointer"
+                            title="Klik untuk mengunggah bukti penyelesaian"
+                          >
+                            <Plus size={12} />
+                            <span>Unggah Bukti</span>
+                          </button>
                         )}
                       </td>
 

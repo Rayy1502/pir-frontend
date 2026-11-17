@@ -57,5 +57,7 @@ export const pirApi = {
   },
   deleteDokumentasi: (dokId: string) =>
     api.delete<{ message: string }>(`/pir/dokumentasi/${dokId}`),
+  updateDokumentasi: (dokId: string, keterangan: string) =>
+    api.put<{ message: string }>(`/pir/dokumentasi/${dokId}`, { keterangan }),
 };
 

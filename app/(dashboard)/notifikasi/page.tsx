@@ -13,6 +13,8 @@ import {
   Filter,
   Loader2,
   CheckCheck,
+  X,
+  ShieldAlert,
 } from 'lucide-react';
 import { proyekApi } from '@/lib/api/proyek';
 import { useNotificationStore } from '@/store/notifikasi';
@@ -24,6 +26,8 @@ interface NotificationItem {
   namaKegiatan: string;
   unitKerja: string;
   tanggalGoLive: string;
+  tglPercobaanSelesai: string;
+  tglBatasAkhir: string;
   tipe: 'terlambat' | 'segera';
   pesan: string;
   tenggatWaktu: string;
@@ -34,6 +38,7 @@ export default function NotifikasiPage() {
   const [proyekList, setProyekList] = useState<Proyek[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'semua' | 'terlambat' | 'segera'>('semua');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const { readIds, markAsRead, markAllAsRead, fetchUnreadCount } = useNotificationStore();
 
@@ -52,6 +57,16 @@ export default function NotifikasiPage() {
     fetchProyek();
     fetchUnreadCount();
   }, [fetchUnreadCount]);
+
+  // Auto-dismiss toast after 4 seconds
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => {
+        setToastMessage(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
 
   const formatTanggal = (iso?: string) => {
     if (!iso) return '-';
@@ -83,8 +98,10 @@ export default function NotifikasiPage() {
           namaKegiatan: p.nama_kegiatan,
           unitKerja: p.unit_kerja,
           tanggalGoLive: p.tanggal_go_live,
+          tglPercobaanSelesai: tglPercobaanSelesai.toISOString(),
+          tglBatasAkhir: tglBatasAkhir.toISOString(),
           tipe: 'terlambat',
-          pesan: `Melebihi batas waktu evaluasi (>1 bulan setelah masa uji coba 2 bulan sejak ${formatTanggal(tglPercobaanSelesai.toISOString())}). Segera selesaikan form dan unggah laporan ber-TTD.`,
+          pesan: `Melebihi batas waktu evaluasi (>1 bulan setelah masa uji coba 2 bulan sejak ${formatTanggal(tglPercobaanSelesai.toISOString())}). Segera selesaikan form dan terbitkan laporan PIR.`,
           tenggatWaktu: 'Lewat Toleransi 1 Bulan',
         });
       } else if (p.status_pir === 'pending') {
@@ -95,6 +112,8 @@ export default function NotifikasiPage() {
           namaKegiatan: p.nama_kegiatan,
           unitKerja: p.unit_kerja,
           tanggalGoLive: p.tanggal_go_live,
+          tglPercobaanSelesai: tglPercobaanSelesai.toISOString(),
+          tglBatasAkhir: tglBatasAkhir.toISOString(),
           tipe: 'segera',
           pesan: isEskalasi
             ? `Peringatan Eskalasi: Mendekati 1 bulan pasca masa uji coba (${formatTanggal(tglPercobaanSelesai.toISOString())}), proses evaluasi PIR belum diselesaikan atau di-ACC (Batas: ${formatTanggal(tglBatasAkhir.toISOString())}).`
@@ -114,6 +133,16 @@ export default function NotifikasiPage() {
 
   const countTerlambat = notifications.filter((n) => n.tipe === 'terlambat').length;
   const countSegera = notifications.filter((n) => n.tipe === 'segera').length;
+
+  const handleMarkAllRead = () => {
+    markAllAsRead(notifications.map((n) => n.proyekId));
+    setToastMessage('Semua notifikasi berhasil ditandai sudah dibaca.');
+  };
+
+  const handleMarkSingleRead = (proyekId: string, namaKegiatan: string) => {
+    markAsRead(proyekId);
+    setToastMessage(`Notifikasi untuk "${namaKegiatan}" ditandai sudah dibaca.`);
+  };
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
@@ -168,8 +197,8 @@ export default function NotifikasiPage() {
 
           {notifications.length > 0 && (
             <button
-              onClick={() => markAllAsRead(notifications.map((n) => n.proyekId))}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 hover:border-gray-300 text-xs font-semibold text-gray-700 hover:text-blue-900 bg-white shadow-2xs transition cursor-pointer"
+              onClick={handleMarkAllRead}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 hover:border-gray-300 text-xs font-semibold text-gray-700 hover:text-blue-900 bg-white shadow-2xs transition cursor-pointer"
             >
               <CheckCheck size={14} className="text-emerald-600" />
               Tandai Semua Dibaca
@@ -202,24 +231,36 @@ export default function NotifikasiPage() {
             return (
               <div
                 key={n.id}
-                className={`bg-white rounded-xl border p-5 shadow-xs transition hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-                  isTerlambat
-                    ? 'border-rose-100 border-l-4 border-l-rose-500'
-                    : 'border-amber-100 border-l-4 border-l-amber-500'
-                } ${isRead ? 'opacity-75 bg-gray-50/40' : ''}`}
+                className={`rounded-2xl border p-5 transition flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                  !isRead
+                    ? isTerlambat
+                      ? 'bg-white border-rose-200 border-l-4 border-l-rose-500 shadow-sm ring-1 ring-rose-500/10'
+                      : 'bg-white border-amber-200 border-l-4 border-l-amber-500 shadow-sm ring-1 ring-amber-500/10'
+                    : 'bg-gray-50/70 border-gray-200 border-l-4 border-l-gray-300 opacity-75'
+                }`}
               >
                 <div className="flex items-start gap-3.5">
                   <div
                     className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                      isTerlambat ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'
+                      !isRead
+                        ? isTerlambat
+                          ? 'bg-rose-50 text-rose-600'
+                          : 'bg-amber-50 text-amber-600'
+                        : 'bg-gray-100 text-gray-400'
                     }`}
                   >
                     {isTerlambat ? <AlertTriangle size={20} /> : <Clock size={20} />}
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-gray-900 text-sm">{n.namaKegiatan}</span>
+                      <span
+                        className={`text-sm ${
+                          !isRead ? 'font-bold text-gray-900' : 'font-semibold text-gray-600'
+                        }`}
+                      >
+                        {n.namaKegiatan}
+                      </span>
                       <span
                         className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
                           isTerlambat
@@ -231,8 +272,8 @@ export default function NotifikasiPage() {
                       </span>
 
                       {!isRead ? (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1.5 shadow-2xs">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
                           Baru
                         </span>
                       ) : (
@@ -242,14 +283,25 @@ export default function NotifikasiPage() {
                       )}
                     </div>
 
-                    <p className="text-xs text-gray-600 leading-relaxed">{n.pesan}</p>
+                    <p className={`text-xs leading-relaxed ${!isRead ? 'text-gray-700' : 'text-gray-500'}`}>
+                      {n.pesan}
+                    </p>
 
-                    <div className="flex items-center gap-4 text-[11px] text-gray-400 font-medium pt-1">
+                    <div className="flex items-center gap-4 text-[11px] text-gray-500 font-medium pt-1 flex-wrap">
                       <span className="flex items-center gap-1">
-                        <Building size={12} /> {n.unitKerja}
+                        <Building size={12} className="text-gray-400" /> {n.unitKerja}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Calendar size={12} /> Rilis: {formatTanggal(n.tanggalGoLive)}
+                        <Calendar size={12} className="text-gray-400" /> Rilis:{' '}
+                        <strong className="text-gray-700 font-semibold">
+                          {formatTanggal(n.tanggalGoLive)}
+                        </strong>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock size={12} className="text-gray-400" /> Batas Akhir PIR:{' '}
+                        <strong className="text-gray-700 font-semibold">
+                          {formatTanggal(n.tglBatasAkhir)}
+                        </strong>
                       </span>
                     </div>
                   </div>
@@ -258,7 +310,7 @@ export default function NotifikasiPage() {
                 <div className="flex items-center gap-2 shrink-0 md:self-center flex-wrap">
                   {!isRead && (
                     <button
-                      onClick={() => markAsRead(n.proyekId)}
+                      onClick={() => handleMarkSingleRead(n.proyekId, n.namaKegiatan)}
                       className="border border-gray-200 hover:border-gray-300 text-gray-600 hover:text-gray-900 text-xs font-semibold px-2.5 py-2 rounded-lg transition cursor-pointer"
                       title="Tandai sudah dibaca"
                     >
@@ -287,6 +339,30 @@ export default function NotifikasiPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 max-w-md w-full animate-in slide-in-from-bottom-5 duration-300">
+          <div className="flex items-start justify-between gap-3 p-4 rounded-2xl border shadow-2xl backdrop-blur-md bg-slate-900/95 text-white border-emerald-500/50 shadow-emerald-950/30">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                <CheckCircle2 size={18} />
+              </div>
+              <div className="text-xs sm:text-sm font-medium leading-relaxed pr-2">
+                <span className="font-bold block text-[13px] mb-0.5">Pembaruan Notifikasi</span>
+                {toastMessage}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setToastMessage(null)}
+              className="text-white/60 hover:text-white p-1 rounded-lg hover:bg-white/10 transition shrink-0 cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -13,6 +13,12 @@ export interface PIRForm {
   daftar_pertanyaan?: string;
   kesimpulan_wawancara?: string;
   responden?: string;
+  disiapkan_oleh?: string;
+  disiapkan_jabatan?: string;
+  direview_oleh?: string;
+  direview_jabatan?: string;
+  disetujui_oleh?: string;
+  disetujui_jabatan?: string;
   status: 'draft' | 'submitted' | 'approved' | 'in_progress' | 'menunggu_ttd' | 'laporan_selesai' | 'selesai';
   approved_by?: string | null;
   approved_at?: string | null;
@@ -33,20 +39,32 @@ export interface CreatePIRPayload {
   daftar_pertanyaan?: string;
   kesimpulan_wawancara?: string;
   responden?: string;
+  disiapkan_oleh?: string;
+  disiapkan_jabatan?: string;
+  direview_oleh?: string;
+  direview_jabatan?: string;
+  disetujui_oleh?: string;
+  disetujui_jabatan?: string;
   status: 'draft' | 'submitted';
 }
 
 export interface UpdatePIRPayload {
-  vendor: string;
-  tujuan_awal: string;
-  metode: MetodePIR;
+  vendor?: string;
+  tujuan_awal?: string;
+  metode?: MetodePIR;
   catatan_kondisi?: string;
   nama_narasumber?: string;
   jabatan_narasumber?: string;
   daftar_pertanyaan?: string;
   kesimpulan_wawancara?: string;
   responden?: string;
-  status: 'draft' | 'submitted';
+  disiapkan_oleh?: string;
+  disiapkan_jabatan?: string;
+  direview_oleh?: string;
+  direview_jabatan?: string;
+  disetujui_oleh?: string;
+  disetujui_jabatan?: string;
+  status?: 'draft' | 'submitted';
 }
 
 export interface PIRDokumentasi {
@@ -77,6 +95,7 @@ export interface SurveyPertanyaan {
   pertanyaan: string;
   tipe: 'skala' | 'teks' | 'pilihan';
   urutan: number;
+  kategori?: string;
   created_at: string;
   jawaban?: SurveyJawaban;
 }
@@ -86,6 +105,7 @@ export interface CustomPertanyaanInput {
   pertanyaan: string;
   tipe: 'skala' | 'teks' | 'pilihan';
   urutan?: number;
+  kategori?: string;
   jawaban_teks?: string;
   jawaban_angka?: number;
 }
@@ -95,6 +115,7 @@ export interface PublicSurveyQuestion {
   pertanyaan: string;
   tipe: 'skala' | 'teks' | 'pilihan';
   urutan: number;
+  kategori?: string;
 }
 
 export interface PublicSurveyResponse {
@@ -120,6 +141,7 @@ export interface SurveyJawabanItem {
 
 export interface PublicSubmitSurveyPayload {
   nama_responden: string;
+  no_badge?: string;
   jabatan_responden?: string;
   unit_kerja_responden?: string;
   kepuasan: number;
@@ -135,6 +157,7 @@ export interface SaveQuestionsPayload {
     pertanyaan: string;
     tipe: 'skala' | 'teks' | 'pilihan';
     urutan: number;
+    kategori?: string;
   }[];
 }
 
@@ -151,6 +174,7 @@ export interface RespondenDetail {
   id: string;
   pir_form_id: string;
   nama: string;
+  no_badge?: string;
   jabatan?: string;
   unit_kerja?: string;
   kepuasan: number;
